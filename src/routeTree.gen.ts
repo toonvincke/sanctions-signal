@@ -18,6 +18,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as AuthenticatedBookmarksRouteImport } from './routes/_authenticated/bookmarks'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedExplorerRouteImport } from './routes/_authenticated/explorer'
+import { Route as AuthenticatedRecordsSlugRouteImport } from './routes/_authenticated/records.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -63,6 +64,12 @@ const AuthenticatedExplorerRoute = AuthenticatedExplorerRouteImport.update({
   path: '/explorer',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRecordsSlugRoute =
+  AuthenticatedRecordsSlugRouteImport.update({
+    id: '/records/$slug',
+    path: '/records/$slug',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explorer': typeof AuthenticatedExplorerRoute
+  '/records/$slug': typeof AuthenticatedRecordsSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,6 +91,7 @@ export interface FileRoutesByTo {
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explorer': typeof AuthenticatedExplorerRoute
+  '/records/$slug': typeof AuthenticatedRecordsSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +104,7 @@ export interface FileRoutesById {
   '/_authenticated/bookmarks': typeof AuthenticatedBookmarksRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/explorer': typeof AuthenticatedExplorerRoute
+  '/_authenticated/records/$slug': typeof AuthenticatedRecordsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/bookmarks'
     | '/dashboard'
     | '/explorer'
+    | '/records/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/bookmarks'
     | '/dashboard'
     | '/explorer'
+    | '/records/$slug'
   id:
     | '__root__'
     | '/'
@@ -128,6 +140,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bookmarks'
     | '/_authenticated/dashboard'
     | '/_authenticated/explorer'
+    | '/_authenticated/records/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedExplorerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/records/$slug': {
+      id: '/_authenticated/records/$slug'
+      path: '/records/$slug'
+      fullPath: '/records/$slug'
+      preLoaderRoute: typeof AuthenticatedRecordsSlugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -211,12 +231,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBookmarksRoute: typeof AuthenticatedBookmarksRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExplorerRoute: typeof AuthenticatedExplorerRoute
+  AuthenticatedRecordsSlugRoute: typeof AuthenticatedRecordsSlugRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBookmarksRoute: AuthenticatedBookmarksRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExplorerRoute: AuthenticatedExplorerRoute,
+  AuthenticatedRecordsSlugRoute: AuthenticatedRecordsSlugRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
