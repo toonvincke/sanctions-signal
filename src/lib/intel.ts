@@ -41,12 +41,12 @@ const LIST_SELECT =
   "id,slug,content_type,headline,executive_summary,publication_date,effective_date,penalty_amount,penalty_currency,legal_status,verification_status,priority,case_number, jurisdiction:jurisdictions(code,name), regime:regimes(slug,name), authority:authorities(slug,short_name)";
 
 export type ExplorerFilters = {
-  q?: string;
-  type?: ContentType;
-  jurisdiction?: string;
-  regime?: string;
-  authority?: string;
-  category?: string;
+  q?: string | undefined;
+  type?: ContentType | undefined;
+  jurisdiction?: string | undefined;
+  regime?: string | undefined;
+  authority?: string | undefined;
+  category?: string | undefined;
 };
 
 export function formatMoney(amount: number | null, currency: string | null) {

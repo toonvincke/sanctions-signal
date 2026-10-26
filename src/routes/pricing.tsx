@@ -39,7 +39,7 @@ function Pricing() {
               </ul>
               <Link
                 to={p.name === "Enterprise" ? "/contact" : "/auth"}
-                search={p.name === "Enterprise" ? undefined : { mode: "signup" }}
+                search={p.name === "Enterprise" ? {} : { mode: "signup" }}
                 className="mt-6 block bg-primary py-2 text-center text-sm text-primary-foreground hover:bg-primary/90"
               >
                 {p.name === "Enterprise" ? "Contact sales" : "Start trial"}
