@@ -14,7 +14,293 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      authorities: {
+        Row: {
+          id: string
+          jurisdiction_id: string | null
+          name: string
+          short_name: string
+          slug: string
+          website: string | null
+        }
+        Insert: {
+          id?: string
+          jurisdiction_id?: string | null
+          name: string
+          short_name: string
+          slug: string
+          website?: string | null
+        }
+        Update: {
+          id?: string
+          jurisdiction_id?: string | null
+          name?: string
+          short_name?: string
+          slug?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "authorities_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookmarks: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          record_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          record_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          record_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookmarks_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      intelligence_records: {
+        Row: {
+          affected_entities: string[]
+          affected_sectors: string[]
+          authority_id: string | null
+          case_number: string | null
+          circumvention_methods: string[]
+          content_type: Database["public"]["Enums"]["content_type"]
+          control_failures: string[]
+          created_at: string
+          detailed_analysis: string | null
+          effective_date: string | null
+          event_date: string | null
+          executive_summary: string
+          headline: string
+          id: string
+          jurisdiction_id: string | null
+          legal_provisions: string[]
+          legal_status: Database["public"]["Enums"]["legal_status"]
+          penalty_amount: number | null
+          penalty_currency: string | null
+          practical_implications: string | null
+          priority: boolean
+          publication_date: string
+          regime_id: string | null
+          retrieved_at: string | null
+          search: unknown
+          slug: string
+          source_facts: string
+          source_publisher: string | null
+          source_title: string | null
+          source_url: string
+          tags: string[]
+          updated_at: string
+          verification_status: Database["public"]["Enums"]["verification_status"]
+          violation: string | null
+        }
+        Insert: {
+          affected_entities?: string[]
+          affected_sectors?: string[]
+          authority_id?: string | null
+          case_number?: string | null
+          circumvention_methods?: string[]
+          content_type: Database["public"]["Enums"]["content_type"]
+          control_failures?: string[]
+          created_at?: string
+          detailed_analysis?: string | null
+          effective_date?: string | null
+          event_date?: string | null
+          executive_summary: string
+          headline: string
+          id?: string
+          jurisdiction_id?: string | null
+          legal_provisions?: string[]
+          legal_status?: Database["public"]["Enums"]["legal_status"]
+          penalty_amount?: number | null
+          penalty_currency?: string | null
+          practical_implications?: string | null
+          priority?: boolean
+          publication_date: string
+          regime_id?: string | null
+          retrieved_at?: string | null
+          search?: unknown
+          slug: string
+          source_facts: string
+          source_publisher?: string | null
+          source_title?: string | null
+          source_url: string
+          tags?: string[]
+          updated_at?: string
+          verification_status?: Database["public"]["Enums"]["verification_status"]
+          violation?: string | null
+        }
+        Update: {
+          affected_entities?: string[]
+          affected_sectors?: string[]
+          authority_id?: string | null
+          case_number?: string | null
+          circumvention_methods?: string[]
+          content_type?: Database["public"]["Enums"]["content_type"]
+          control_failures?: string[]
+          created_at?: string
+          detailed_analysis?: string | null
+          effective_date?: string | null
+          event_date?: string | null
+          executive_summary?: string
+          headline?: string
+          id?: string
+          jurisdiction_id?: string | null
+          legal_provisions?: string[]
+          legal_status?: Database["public"]["Enums"]["legal_status"]
+          penalty_amount?: number | null
+          penalty_currency?: string | null
+          practical_implications?: string | null
+          priority?: boolean
+          publication_date?: string
+          regime_id?: string | null
+          retrieved_at?: string | null
+          search?: unknown
+          slug?: string
+          source_facts?: string
+          source_publisher?: string | null
+          source_title?: string | null
+          source_url?: string
+          tags?: string[]
+          updated_at?: string
+          verification_status?: Database["public"]["Enums"]["verification_status"]
+          violation?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_records_authority_id_fkey"
+            columns: ["authority_id"]
+            isOneToOne: false
+            referencedRelation: "authorities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_records_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_records_regime_id_fkey"
+            columns: ["regime_id"]
+            isOneToOne: false
+            referencedRelation: "regimes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jurisdictions: {
+        Row: {
+          code: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      record_categories: {
+        Row: {
+          category_id: string
+          record_id: string
+        }
+        Insert: {
+          category_id: string
+          record_id: string
+        }
+        Update: {
+          category_id?: string
+          record_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "record_categories_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regimes: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          target_country: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          target_country?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          target_country?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +309,25 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      content_type:
+        | "sanctions_development"
+        | "case_law"
+        | "enforcement_action"
+        | "guidance"
+        | "legislation"
+        | "circumvention"
+      legal_status:
+        | "final_judgment"
+        | "interim"
+        | "ag_opinion"
+        | "settlement"
+        | "penalty_notice"
+        | "conviction"
+        | "allegation"
+        | "in_force"
+        | "announced"
+        | "not_applicable"
+      verification_status: "verified" | "pending_review" | "unverified"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +454,28 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      content_type: [
+        "sanctions_development",
+        "case_law",
+        "enforcement_action",
+        "guidance",
+        "legislation",
+        "circumvention",
+      ],
+      legal_status: [
+        "final_judgment",
+        "interim",
+        "ag_opinion",
+        "settlement",
+        "penalty_notice",
+        "conviction",
+        "allegation",
+        "in_force",
+        "announced",
+        "not_applicable",
+      ],
+      verification_status: ["verified", "pending_review", "unverified"],
+    },
   },
 } as const
