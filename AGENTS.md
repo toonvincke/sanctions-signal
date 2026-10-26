@@ -8,3 +8,8 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Architecture rules
+- Intelligence content lives in `intelligence_records` with FK lookups (jurisdictions, regimes, authorities) and a `record_categories` join; readable by authenticated users only via RLS. Why: portal content is subscriber-only, marketing pages stay public.
+- Each record keeps `source_facts` separate from `practical_implications` (analysis) and carries `legal_status` + `verification_status`. Why: the product must never blur verified facts with interpretation.
+- Portal data reads use browser Supabase client query options in `src/lib/intel.ts` under the `ssr:false` `_authenticated` layout. Why: session lives in localStorage; RLS enforces access.
