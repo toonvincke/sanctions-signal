@@ -1,0 +1,36 @@
+name: Sanctions monitoring
+
+on:
+  schedule:
+    - cron: "17 */4 * * *"
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate required secrets
+        env:
+          SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
+          SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
+        run: |
+          test -n "$SUPABASE_FUNCTIONS_URL" || (echo "Missing SUPABASE_FUNCTIONS_URL secret" && exit 1)
+          test -n "$SANCTIONS_CRON_SECRET" || (echo "Missing SANCTIONS_CRON_SECRET secret" && exit 1)
+      - name: Import sanctions lists
+        env:
+          SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
+          SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
+        run: |
+          curl --fail-with-body --retry 2 --retry-delay 10 \
+            -X POST "$SUPABASE_FUNCTIONS_URL/sanctions-sync" \
+            -H "Authorization: Bearer $SANCTIONS_CRON_SECRET" \
+            -H "Content-Type: application/json" --data '{}'
+      - name: Discover intelligence publications
+        env:
+          SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
+          SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
+        run: |
+          curl --fail-with-body --retry 2 --retry-delay 10 \
+            -X POST "$SUPABASE_FUNCTIONS_URL/intelligence-discover" \
+            -H "Authorization: Bearer $SANCTIONS_CRON_SECRET" \
+            -H "Content-Type: application/json" --data '{}'
