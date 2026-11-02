@@ -39,7 +39,7 @@ function pick(row: string[], headers: string[], candidates: string[]): string {
 function mapCsvRows(source: Source, body: string): Entry[] {
   const rows = csvRows(body);
   if (!rows.length) return [];
-  const hasHeader = /name|subject|uniqueidentifier|uniqueid/i.test(rows[0].join(","));
+  const firstHeaders = rows[0].map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ""));\n  const hasHeader = firstHeaders.some((h) => ["uniqueidentifier","uniqueid","sdnname","name1","subjectname","fullname","referencenumber"].includes(h));
   const headers = hasHeader ? rows[0].map((h) => h.trim()) : [];
   const data = hasHeader ? rows.slice(1) : rows;
   return data.flatMap((row, index) => {
