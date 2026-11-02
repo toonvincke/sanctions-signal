@@ -54,6 +54,12 @@
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-success: var(--success);
+  --color-navy: var(--navy);
+  --color-navy-deep: var(--navy-deep);
+  --color-navy-foreground: var(--navy-foreground);
+  --color-navy-muted: var(--navy-muted);
+  --color-navy-border: var(--navy-border);
+  --color-navy-accent: var(--navy-accent);
   --color-warning: var(--warning);
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Newsreader", ui-serif, Georgia, serif;
@@ -89,6 +95,12 @@
   --brand: oklch(0.45 0.13 28);
   --brand-foreground: oklch(0.98 0 0);
   --success: oklch(0.48 0.1 155);
+  --navy: oklch(0.25 0.065 258);
+  --navy-deep: oklch(0.2 0.055 258);
+  --navy-foreground: oklch(0.97 0.006 85);
+  --navy-muted: oklch(0.78 0.025 255);
+  --navy-border: oklch(1 0 0 / 14%);
+  --navy-accent: oklch(0.78 0.11 75);
   --warning: oklch(0.62 0.13 70);
   --border: oklch(0.89 0.01 85);
   --input: oklch(0.87 0.01 85);
@@ -128,6 +140,12 @@
   --brand: oklch(0.65 0.14 30);
   --brand-foreground: oklch(0.15 0 0);
   --success: oklch(0.68 0.12 155);
+  --navy: oklch(0.14 0.03 258);
+  --navy-deep: oklch(0.11 0.025 258);
+  --navy-foreground: oklch(0.94 0.008 85);
+  --navy-muted: oklch(0.72 0.02 255);
+  --navy-border: oklch(1 0 0 / 10%);
+  --navy-accent: oklch(0.8 0.11 75);
   --warning: oklch(0.75 0.13 75);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
