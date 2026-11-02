@@ -9,7 +9,7 @@ This branch contains the first implementation layer for the three-phase roadmap.
 - Region: Frankfurt (EU)
 - Project URL: `https://hhweignwwtpcqpulcttk.supabase.co`
 
-This is a newly created, empty project. It currently has no application tables, database migrations, or Edge Functions. **Do not apply the monitoring migrations yet:** the first monitoring migration assumes that the existing application table `public.intelligence_records` (and its related tables and enums) already exists. The original project was not accessible during setup, so its database schema and data have not been copied. Restore/create the core application schema first, then apply the monitoring migrations in order.
+This is a newly created, empty project. It currently has no application tables, database migrations, or Edge Functions. The monitoring migrations assume that the application table `public.intelligence_records` (and its related tables and enums) already exists. The original project was not accessible during setup, so its database schema and data have not been copied. The core schema and sample records are therefore included as the first two migrations in `supabase/migrations`; apply all migrations in filename order (see "Required setup").
 
 ## What is included
 
@@ -22,10 +22,15 @@ This is a newly created, empty project. It currently has no application tables, 
 1. Connect the Lovable application to the new Supabase project. Set the browser-safe environment variables in the Lovable project:
    - `VITE_SUPABASE_URL=https://hhweignwwtpcqpulcttk.supabase.co`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`: copy the publishable key from Supabase Project Settings → API Keys. It is intended for browser use; never use the service-role key here.
-2. Create/restore the core application schema (including `intelligence_records`, `jurisdictions`, `regimes`, `authorities`, `categories`, `bookmarks`, `record_categories`, and the `content_type`, `legal_status`, and `verification_status` enums). Verify its RLS policies before exposing the new project to users.
-3. Apply the monitoring migrations in order only after the core schema exists:
+2. Create the core application schema (including `intelligence_records`, `jurisdictions`, `regimes`, `authorities`, `categories`, `bookmarks`, `record_categories`, and the `content_type`, `legal_status`, and `verification_status` enums). This schema, its RLS policies and the sample records are included as the first two Supabase migrations (copies of `drizzle/migrations/0000_migration.sql` and `0001_migration.sql`). Verify the RLS policies before exposing the new project to users.
+3. Apply all migrations in `supabase/migrations` in filename order, for example with `supabase link --project-ref hhweignwwtpcqpulcttk` followed by `supabase db push`. The monitoring migrations depend on the core schema, so the order matters:
+   - `202611010001_core_schema.sql`
+   - `202611010002_core_seed.sql`
    - `202611020001_sanctions_monitoring.sql`
    - `202611020002_intelligence_record_history.sql`
+
+   These files are not idempotent (the core schema uses plain `create type`/`create table`). Apply them once to an empty project; do not re-run them against a project that already has the tables.
+   After the migrations are applied, regenerate `src/integrations/supabase/types.ts` so it also contains the monitoring tables (for example with `supabase gen types typescript --project-id hhweignwwtpcqpulcttk`).
 4. Deploy all four Edge Functions from this branch:
    - `sanctions-sync`
    - `intelligence-discover`
