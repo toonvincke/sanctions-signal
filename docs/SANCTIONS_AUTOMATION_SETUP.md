@@ -4,9 +4,9 @@ This branch adds the first implementation layer for the three-phase roadmap. It 
 
 ## What is included
 
-- **Phase 1 — list monitoring:** scheduled checks for OFAC SDN, OFAC consolidated non-SDN primary names, the UK Sanctions List CSV and the UN consolidated XML. CSV feeds are mapped into `sanctions_list_entries`; XML is currently hash-monitored only and is not yet parsed into entity rows. This is deliberate: do not claim full coverage until each XML schema has been validated against live samples.
-- **Phase 2 — intelligence discovery:** RSS/Atom discovery function that stores new publications as `pending_review` candidates. No candidate is published automatically. Add verified RSS/Atom feeds to `sanctions_sources` with `source_type='rss'`.
-- **Phase 3 — research assistant foundation:** authenticated Edge Function retrieves only existing records marked `verification_status='verified'`, then generates a cited research answer. It is not a legal decision engine and must not be marketed as one.
+- **Phase 1 — list monitoring:** scheduled checks for OFAC SDN, OFAC consolidated non-SDN primary names, the UK Sanctions List CSV and the UN consolidated XML. CSV feeds and the UN XML are mapped into `sanctions_list_entries`; the EU export is not enabled until you provide its current download URL. Imports fail closed when rows cannot be mapped.
+- **Phase 2 — intelligence discovery:** RSS/Atom discovery stores new publications as `pending_review` candidates and can generate structured AI drafts when `OPENAI_API_KEY` is configured. A separate `candidate-review` function lets an authenticated administrator approve or reject a candidate. No candidate is published automatically.
+- **Phase 3 — research assistant foundation:** authenticated Edge Function retrieves only existing records marked `verification_status='verified'`, then generates a cited research answer. It is not a legal decision engine and must not be marketed as one. A database trigger snapshots previous record versions before updates.
 
 ## Required setup (you need to do these steps)
 
@@ -20,7 +20,7 @@ This branch adds the first implementation layer for the three-phase roadmap. It 
 4. Set Edge Function secrets:
    - `SANCTIONS_CRON_SECRET`: generate a long random secret (at least 32 bytes).
    - `OPENAI_API_KEY`: only needed for the research assistant.
-   - `OPENAI_MODEL`: optional; defaults to `gpt-4.1-mini`.
+   - `OPENAI_MODEL`: optional; defaults to `gpt-4.1-mini`. The same key enables AI draft generation in `intelligence-discover` and question answering in `assistant`.
    - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are normally injected by Supabase for Edge Functions; verify they exist in the deployed function environment. Never put the service-role key in browser code or GitHub.
 5. In GitHub → Settings → Secrets and variables → Actions, add:
    - `SUPABASE_FUNCTIONS_URL`: `https://zaxndzgkadanpctumyem.supabase.co/functions/v1`
@@ -35,7 +35,7 @@ This branch adds the first implementation layer for the three-phase roadmap. It 
 - The UN XML and EU XML feeds are not yet mapped to entity rows. UN is only monitored by content hash; EU requires a current access URL. Do not represent either as fully imported until a schema-specific parser and reconciliation tests are added.
 - The current importer upserts observed rows but does not yet mark absent rows as delisted. This avoids false delistings from partial or malformed downloads. A later reconciliation step must only mark removals after a complete validated snapshot.
 - The discovery function requires RSS/Atom rows to be added to `sanctions_sources`; do not add generic HTML pages and expect it to crawl them.
-- Phase 2 candidates are not yet surfaced in an editorial UI. Review them in the Supabase table editor until the admin review screen is implemented.
+- Phase 2 candidates are not yet surfaced in an editorial UI. Review candidate rows in the Supabase table editor and call the `candidate-review` function with `candidate_id`, `decision` (`approve` or `reject`) and optional `review_notes`. The authenticated user's `app_metadata.role` must equal `admin`.
 - The assistant searches verified records only. It does not query raw list entries or independently interpret legislation. Add a subscription/entitlement check before exposing it to paying users.
 - The migration assumes the existing `intelligence_records` table and `auth.users` table described by the repository's generated database types.
 - A scheduled GitHub Actions workflow is not active until the two GitHub Actions secrets are configured and the branch is merged into the default branch.
