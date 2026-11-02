@@ -13,11 +13,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as EnforcementRouteImport } from './routes/enforcement'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as AuthenticatedBookmarksRouteImport } from './routes/_authenticated/bookmarks'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedExplorerRouteImport } from './routes/_authenticated/explorer'
+import { Route as SanctionsRegimeRouteImport } from './routes/sanctions.$regime'
+import { Route as SanctionsInternationalRouteImport } from './routes/sanctions.international'
 import { Route as AuthenticatedRecordsSlugRouteImport } from './routes/_authenticated/records.$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -37,6 +40,11 @@ const AuthRoute = AuthRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnforcementRoute = EnforcementRouteImport.update({
+  id: '/enforcement',
+  path: '/enforcement',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeaturesRoute = FeaturesRouteImport.update({
@@ -64,6 +72,16 @@ const AuthenticatedExplorerRoute = AuthenticatedExplorerRouteImport.update({
   path: '/explorer',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const SanctionsRegimeRoute = SanctionsRegimeRouteImport.update({
+  id: '/sanctions/$regime',
+  path: '/sanctions/$regime',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SanctionsInternationalRoute = SanctionsInternationalRouteImport.update({
+  id: '/sanctions/international',
+  path: '/sanctions/international',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRecordsSlugRoute =
   AuthenticatedRecordsSlugRouteImport.update({
     id: '/records/$slug',
@@ -75,22 +93,28 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/enforcement': typeof EnforcementRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explorer': typeof AuthenticatedExplorerRoute
+  '/sanctions/$regime': typeof SanctionsRegimeRoute
+  '/sanctions/international': typeof SanctionsInternationalRoute
   '/records/$slug': typeof AuthenticatedRecordsSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/enforcement': typeof EnforcementRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explorer': typeof AuthenticatedExplorerRoute
+  '/sanctions/$regime': typeof SanctionsRegimeRoute
+  '/sanctions/international': typeof SanctionsInternationalRoute
   '/records/$slug': typeof AuthenticatedRecordsSlugRoute
 }
 export interface FileRoutesById {
@@ -99,11 +123,14 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/enforcement': typeof EnforcementRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
   '/_authenticated/bookmarks': typeof AuthenticatedBookmarksRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/explorer': typeof AuthenticatedExplorerRoute
+  '/sanctions/$regime': typeof SanctionsRegimeRoute
+  '/sanctions/international': typeof SanctionsInternationalRoute
   '/_authenticated/records/$slug': typeof AuthenticatedRecordsSlugRoute
 }
 export interface FileRouteTypes {
@@ -112,22 +139,28 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/contact'
+    | '/enforcement'
     | '/features'
     | '/pricing'
     | '/bookmarks'
     | '/dashboard'
     | '/explorer'
+    | '/sanctions/$regime'
+    | '/sanctions/international'
     | '/records/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/contact'
+    | '/enforcement'
     | '/features'
     | '/pricing'
     | '/bookmarks'
     | '/dashboard'
     | '/explorer'
+    | '/sanctions/$regime'
+    | '/sanctions/international'
     | '/records/$slug'
   id:
     | '__root__'
@@ -135,11 +168,14 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/contact'
+    | '/enforcement'
     | '/features'
     | '/pricing'
     | '/_authenticated/bookmarks'
     | '/_authenticated/dashboard'
     | '/_authenticated/explorer'
+    | '/sanctions/$regime'
+    | '/sanctions/international'
     | '/_authenticated/records/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -148,8 +184,11 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ContactRoute: typeof ContactRoute
+  EnforcementRoute: typeof EnforcementRoute
   FeaturesRoute: typeof FeaturesRoute
   PricingRoute: typeof PricingRoute
+  SanctionsRegimeRoute: typeof SanctionsRegimeRoute
+  SanctionsInternationalRoute: typeof SanctionsInternationalRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -180,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/enforcement': {
+      id: '/enforcement'
+      path: '/enforcement'
+      fullPath: '/enforcement'
+      preLoaderRoute: typeof EnforcementRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/features': {
@@ -217,6 +263,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedExplorerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/sanctions/$regime': {
+      id: '/sanctions/$regime'
+      path: '/sanctions/$regime'
+      fullPath: '/sanctions/$regime'
+      preLoaderRoute: typeof SanctionsRegimeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sanctions/international': {
+      id: '/sanctions/international'
+      path: '/sanctions/international'
+      fullPath: '/sanctions/international'
+      preLoaderRoute: typeof SanctionsInternationalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/records/$slug': {
       id: '/_authenticated/records/$slug'
       path: '/records/$slug'
@@ -249,8 +309,11 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ContactRoute: ContactRoute,
+  EnforcementRoute: EnforcementRoute,
   FeaturesRoute: FeaturesRoute,
   PricingRoute: PricingRoute,
+  SanctionsRegimeRoute: SanctionsRegimeRoute,
+  SanctionsInternationalRoute: SanctionsInternationalRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
