@@ -19,7 +19,7 @@ This branch adds the first implementation layer for the three-phase roadmap. It 
    With Supabase CLI: `supabase functions deploy sanctions-sync`, and repeat for the other two.
 4. Set Edge Function secrets:
    - `SANCTIONS_CRON_SECRET`: generate a long random secret (at least 32 bytes).
-   - `OPENAI_API_KEY`: only needed for the research assistant.
+   - `OPENAI_API_KEY`: enables AI draft generation and the research assistant.
    - `OPENAI_MODEL`: optional; defaults to `gpt-4.1-mini`. The same key enables AI draft generation in `intelligence-discover` and question answering in `assistant`.
    - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are normally injected by Supabase for Edge Functions; verify they exist in the deployed function environment. Never put the service-role key in browser code or GitHub.
 5. In GitHub → Settings → Secrets and variables → Actions, add:
