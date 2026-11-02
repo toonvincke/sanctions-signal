@@ -1,4 +1,4 @@
-project_id = "zaxndzgkadanpctumyem"
+project_id = "hhweignwwtpcqpulcttk"
 
 # These two endpoints authenticate with the dedicated SANCTIONS_CRON_SECRET
 # inside the function, so the Supabase gateway must not require a Supabase JWT.
