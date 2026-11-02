@@ -10,9 +10,9 @@ This branch adds the first implementation layer for the three-phase roadmap. It 
 
 ## Required setup (you need to do these steps)
 
-1. Open your Lovable project and confirm it is connected to Supabase project `zaxndzgkadanpctumyem`. The repository currently has Lovable Cloud/Supabase integration, but there are no Supabase migrations or Edge Functions committed on `main`.
-2. Apply `supabase/migrations/202611020001_sanctions_monitoring.sql` to the linked project's SQL editor (or use Supabase CLI after linking the project). Review the SQL before applying it to a live database.
-3. Deploy the three Edge Functions from this branch:
+1. Open your Lovable project and confirm it is connected to Supabase project `zaxndzgkadanpctumyem`. The repository currently has Lovable Cloud/Supabase integration; these new migrations and Edge Functions are on this feature branch and must be merged before your normal `main`-based workflow uses them.
+2. Apply both migrations, in order, to the linked project's SQL editor (or use Supabase CLI after linking the project): `202611020001_sanctions_monitoring.sql`, then `202611020002_intelligence_record_history.sql`. Review the SQL before applying it to a live database.
+3. Deploy the four Edge Functions from this branch:
    - `sanctions-sync`
    - `intelligence-discover`
    - `assistant`
@@ -32,7 +32,7 @@ This branch adds the first implementation layer for the three-phase roadmap. It 
 ## Important limitations before production use
 
 - The OFAC and UK CSV formats can change. Check import run counts and sample entries after the first manual run. The importer fails closed if it cannot identify names.
-- The UN XML and EU XML feeds are not yet mapped to entity rows. UN is only monitored by content hash; EU requires a current access URL. Do not represent either as fully imported until a schema-specific parser and reconciliation tests are added.
+- The UN XML parser maps core individual/entity names, identifiers and selected identifying details. Validate its output against current official samples before relying on it operationally. EU XML requires a current access URL and a dedicated parser.
 - The current importer upserts observed rows but does not yet mark absent rows as delisted. This avoids false delistings from partial or malformed downloads. A later reconciliation step must only mark removals after a complete validated snapshot.
 - The discovery function requires RSS/Atom rows to be added to `sanctions_sources`; do not add generic HTML pages and expect it to crawl them.
 - Phase 2 candidates are not yet surfaced in an editorial UI. Review candidate rows in the Supabase table editor and call the `candidate-review` function with `candidate_id`, `decision` (`approve` or `reject`) and optional `review_notes`. The authenticated user's `app_metadata.role` must equal `admin`.
