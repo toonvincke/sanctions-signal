@@ -52,7 +52,7 @@ function AccountPage() {
       return;
     }
     setPwBusy(true);
-    const { error } = await supabase.auth.updateUser({ password: pw, current_password: current } as never);
+    const { error } = await supabase.auth.updateUser({ password: pw, current_password: current });
     setPwBusy(false);
     if (error) {
       setPwError(friendlyAuthError(error));
