@@ -31,13 +31,18 @@ function AuthPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard", replace: true });
-    });
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (s) navigate({ to: "/dashboard", replace: true });
-    });
-    return () => data.subscription.unsubscribe();
+    try {
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) navigate({ to: "/dashboard", replace: true });
+      });
+      const { data } = supabase.auth.onAuthStateChange((_e, s) => {
+        if (s) navigate({ to: "/dashboard", replace: true });
+      });
+      return () => data.subscription.unsubscribe();
+    } catch (error) {
+      console.error("[Supabase] Auth unavailable:", error);
+      return undefined;
+    }
   }, [navigate]);
 
   async function submit(e: React.FormEvent) {
