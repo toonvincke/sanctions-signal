@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { DOMParser } from "https://esm.sh/linkedom@0.18.5";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -39,7 +40,8 @@ function pick(row: string[], headers: string[], candidates: string[]): string {
 function mapCsvRows(source: Source, body: string): Entry[] {
   const rows = csvRows(body);
   if (!rows.length) return [];
-  const firstHeaders = rows[0].map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ""));\n  const hasHeader = firstHeaders.some((h) => ["uniqueidentifier","uniqueid","sdnname","name","name1","subjectname","fullname","referencenumber"].includes(h));
+  const firstHeaders = rows[0].map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ""));
+  const hasHeader = firstHeaders.some((h) => ["uniqueidentifier","uniqueid","sdnname","name","name1","subjectname","fullname","referencenumber"].includes(h));
   const headers = hasHeader ? rows[0].map((h) => h.trim()) : [];
   const data = hasHeader ? rows.slice(1) : rows;
   return data.flatMap((row, index) => {
