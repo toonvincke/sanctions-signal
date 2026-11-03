@@ -16,6 +16,8 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as EnforcementRouteImport } from './routes/enforcement'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedBookmarksRouteImport } from './routes/_authenticated/bookmarks'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedExplorerRouteImport } from './routes/_authenticated/explorer'
@@ -57,6 +59,16 @@ const PricingRoute = PricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBookmarksRoute = AuthenticatedBookmarksRouteImport.update({
   id: '/bookmarks',
   path: '/bookmarks',
@@ -96,6 +108,8 @@ export interface FileRoutesByFullPath {
   '/enforcement': typeof EnforcementRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explorer': typeof AuthenticatedExplorerRoute
@@ -110,6 +124,8 @@ export interface FileRoutesByTo {
   '/enforcement': typeof EnforcementRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explorer': typeof AuthenticatedExplorerRoute
@@ -126,6 +142,8 @@ export interface FileRoutesById {
   '/enforcement': typeof EnforcementRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/bookmarks': typeof AuthenticatedBookmarksRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/explorer': typeof AuthenticatedExplorerRoute
@@ -142,6 +160,8 @@ export interface FileRouteTypes {
     | '/enforcement'
     | '/features'
     | '/pricing'
+    | '/reset-password'
+    | '/account'
     | '/bookmarks'
     | '/dashboard'
     | '/explorer'
@@ -156,6 +176,8 @@ export interface FileRouteTypes {
     | '/enforcement'
     | '/features'
     | '/pricing'
+    | '/reset-password'
+    | '/account'
     | '/bookmarks'
     | '/dashboard'
     | '/explorer'
@@ -171,6 +193,8 @@ export interface FileRouteTypes {
     | '/enforcement'
     | '/features'
     | '/pricing'
+    | '/reset-password'
+    | '/_authenticated/account'
     | '/_authenticated/bookmarks'
     | '/_authenticated/dashboard'
     | '/_authenticated/explorer'
@@ -187,6 +211,7 @@ export interface RootRouteChildren {
   EnforcementRoute: typeof EnforcementRoute
   FeaturesRoute: typeof FeaturesRoute
   PricingRoute: typeof PricingRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SanctionsRegimeRoute: typeof SanctionsRegimeRoute
   SanctionsInternationalRoute: typeof SanctionsInternationalRoute
 }
@@ -242,6 +267,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/account': {
+      id: '/_authenticated/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/bookmarks': {
       id: '/_authenticated/bookmarks'
       path: '/bookmarks'
@@ -288,6 +327,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedBookmarksRoute: typeof AuthenticatedBookmarksRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExplorerRoute: typeof AuthenticatedExplorerRoute
@@ -295,6 +335,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedBookmarksRoute: AuthenticatedBookmarksRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExplorerRoute: AuthenticatedExplorerRoute,
@@ -312,6 +353,7 @@ const rootRouteChildren: RootRouteChildren = {
   EnforcementRoute: EnforcementRoute,
   FeaturesRoute: FeaturesRoute,
   PricingRoute: PricingRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SanctionsRegimeRoute: SanctionsRegimeRoute,
   SanctionsInternationalRoute: SanctionsInternationalRoute,
 }

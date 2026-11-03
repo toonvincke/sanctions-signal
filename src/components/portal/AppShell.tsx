@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouteContext } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { LayoutDashboard, Search, Bookmark, LogOut, Gavel, Scale, FileText, Globe2 } from "lucide-react";
+import { LayoutDashboard, Search, Bookmark, LogOut, Gavel, Scale, FileText, Globe2, UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const primary = [
@@ -52,8 +52,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
-        <div className="mt-auto border-t border-sidebar-border p-4 text-xs">
+      <div className="mt-auto border-t border-sidebar-border p-4 text-xs">
           <div className="truncate text-sidebar-foreground/70">{user.email}</div>
+          <Link to="/account" className="mt-2 flex items-center gap-2 text-sidebar-foreground/80 hover:text-sidebar-primary">
+            <UserRound className="h-3.5 w-3.5" /> Account
+          </Link>
           <button onClick={signOut} className="mt-2 flex items-center gap-2 text-sidebar-foreground/80 hover:text-sidebar-primary">
             <LogOut className="h-3.5 w-3.5" /> Sign out
           </button>
@@ -66,6 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/explorer">Explorer</Link>
             <Link to="/bookmarks">Saved</Link>
+            <Link to="/account">Account</Link>
           </div>
         </div>
         <main className="flex-1">{children}</main>
