@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { DOMParser } from "npm:linkedom@0.18.5";
+import { DOMParser } from "https://esm.sh/linkedom@0.18.5";
 
 // linkedom returns DOM-like nodes; the Deno runtime has no built-in DOM types.
 // deno-lint-ignore no-explicit-any
