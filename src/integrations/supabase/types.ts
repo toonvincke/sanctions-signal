@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      assistant_feedback: {
+        Row: {
+          answer: string
+          cited_record_ids: string[]
+          created_at: string
+          feedback: string | null
+          id: string
+          question: string
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          cited_record_ids?: string[]
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          question: string
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          cited_record_ids?: string[]
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          question?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       authorities: {
         Row: {
           id: string
@@ -98,6 +128,112 @@ export type Database = {
           slug?: string
         }
         Relationships: []
+      }
+      intelligence_candidates: {
+        Row: {
+          ai_draft: Json | null
+          content_hash: string | null
+          created_at: string
+          discovered_at: string
+          extracted_text: string | null
+          id: string
+          published_at: string | null
+          published_record_id: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          source_code: string
+          source_publisher: string | null
+          source_title: string
+          source_url: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_draft?: Json | null
+          content_hash?: string | null
+          created_at?: string
+          discovered_at?: string
+          extracted_text?: string | null
+          id?: string
+          published_at?: string | null
+          published_record_id?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          source_code: string
+          source_publisher?: string | null
+          source_title: string
+          source_url: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_draft?: Json | null
+          content_hash?: string | null
+          created_at?: string
+          discovered_at?: string
+          extracted_text?: string | null
+          id?: string
+          published_at?: string | null
+          published_record_id?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          source_code?: string
+          source_publisher?: string | null
+          source_title?: string
+          source_url?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_candidates_published_record_id_fkey"
+            columns: ["published_record_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_record_versions: {
+        Row: {
+          change_reason: string | null
+          changed_by: string | null
+          created_at: string
+          id: string
+          record_id: string
+          snapshot: Json
+          version_number: number
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          record_id: string
+          snapshot: Json
+          version_number: number
+        }
+        Update: {
+          change_reason?: string | null
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          record_id?: string
+          snapshot?: Json
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_record_versions_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_records"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       intelligence_records: {
         Row: {
@@ -322,6 +458,167 @@ export type Database = {
           name?: string
           slug?: string
           target_country?: string | null
+        }
+        Relationships: []
+      }
+      sanctions_import_runs: {
+        Row: {
+          content_hash: string | null
+          error_message: string | null
+          finished_at: string | null
+          http_status: number | null
+          id: string
+          metadata: Json
+          records_added: number
+          records_changed: number
+          records_removed: number
+          records_seen: number
+          source_code: string
+          source_id: string | null
+          started_at: string
+          status: string
+        }
+        Insert: {
+          content_hash?: string | null
+          error_message?: string | null
+          finished_at?: string | null
+          http_status?: number | null
+          id?: string
+          metadata?: Json
+          records_added?: number
+          records_changed?: number
+          records_removed?: number
+          records_seen?: number
+          source_code: string
+          source_id?: string | null
+          started_at?: string
+          status: string
+        }
+        Update: {
+          content_hash?: string | null
+          error_message?: string | null
+          finished_at?: string | null
+          http_status?: number | null
+          id?: string
+          metadata?: Json
+          records_added?: number
+          records_changed?: number
+          records_removed?: number
+          records_seen?: number
+          source_code?: string
+          source_id?: string | null
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sanctions_import_runs_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sanctions_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sanctions_list_entries: {
+        Row: {
+          active: boolean
+          aliases: string[]
+          content_hash: string
+          first_seen_at: string
+          id: string
+          identifying_data: Json
+          last_seen_at: string
+          programs: string[]
+          removed_at: string | null
+          source_code: string
+          source_entry_id: string
+          source_updated_at: string | null
+          source_url: string
+          subject_name: string
+          subject_type: string | null
+        }
+        Insert: {
+          active?: boolean
+          aliases?: string[]
+          content_hash: string
+          first_seen_at?: string
+          id?: string
+          identifying_data?: Json
+          last_seen_at?: string
+          programs?: string[]
+          removed_at?: string | null
+          source_code: string
+          source_entry_id: string
+          source_updated_at?: string | null
+          source_url: string
+          subject_name: string
+          subject_type?: string | null
+        }
+        Update: {
+          active?: boolean
+          aliases?: string[]
+          content_hash?: string
+          first_seen_at?: string
+          id?: string
+          identifying_data?: Json
+          last_seen_at?: string
+          programs?: string[]
+          removed_at?: string | null
+          source_code?: string
+          source_entry_id?: string
+          source_updated_at?: string | null
+          source_url?: string
+          subject_name?: string
+          subject_type?: string | null
+        }
+        Relationships: []
+      }
+      sanctions_sources: {
+        Row: {
+          code: string
+          created_at: string
+          enabled: boolean
+          id: string
+          jurisdiction: string
+          last_checked_at: string | null
+          last_content_hash: string | null
+          last_error: string | null
+          last_success_at: string | null
+          name: string
+          source_type: string
+          source_url: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          jurisdiction: string
+          last_checked_at?: string | null
+          last_content_hash?: string | null
+          last_error?: string | null
+          last_success_at?: string | null
+          name: string
+          source_type: string
+          source_url: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          jurisdiction?: string
+          last_checked_at?: string | null
+          last_content_hash?: string | null
+          last_error?: string | null
+          last_success_at?: string | null
+          name?: string
+          source_type?: string
+          source_url?: string
+          updated_at?: string
         }
         Relationships: []
       }
