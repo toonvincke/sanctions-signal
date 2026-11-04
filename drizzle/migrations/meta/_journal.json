@@ -22,6 +22,20 @@
       "when": 1793700399064,
       "tag": "0002_profiles_and_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793781692946,
+      "tag": "0003_sanctions_monitoring",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793781705627,
+      "tag": "0004_intelligence_record_history",
+      "breakpoints": true
     }
   ]
 }
