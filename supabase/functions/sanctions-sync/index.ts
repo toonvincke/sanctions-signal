@@ -124,9 +124,22 @@ Deno.serve(async (req) => {
         throw new Error("No validated XML parser is configured for this source yet");
       } else entries = mapCsvRows(source, body);
       if (!entries.length) throw new Error("No entries could be mapped; refusing to mark this source current");
+      // Reject duplicate identifiers and implausibly small snapshots before touching stored data.
+      const ids = new Set(entries.map((entry) => entry.source_entry_id));
+      if (ids.size !== entries.length) throw new Error("Duplicate source identifiers; refusing incomplete snapshot");
+      if (entries.length < 10) throw new Error("Unexpectedly small sanctions snapshot; refusing import");
+      const seenAt = new Date().toISOString();
       for (const entry of entries) entry.content_hash = await hashText(JSON.stringify(entry.identifying_data));
-      const { error: upsertError } = await db.from("sanctions_list_entries").upsert(entries, { onConflict: "source_code,source_entry_id" });
-      if (upsertError) throw upsertError;
+      // Avoid API payload limits. Do not mark absent entries inactive here: that requires
+      // atomic, validated full-snapshot reconciliation to prevent false delistings.
+      for (let offset = 0; offset < entries.length; offset += 250) {
+        const batch = entries.slice(offset, offset + 250).map((entry) => ({
+          ...entry, last_seen_at: seenAt, active: true, removed_at: null,
+        }));
+        const { error: upsertError } = await db.from("sanctions_list_entries")
+          .upsert(batch, { onConflict: "source_code,source_entry_id" });
+        if (upsertError) throw upsertError;
+      }
       await db.from("sanctions_import_runs").update({
         status: "succeeded", finished_at: new Date().toISOString(), http_status: response.status,
         content_hash: contentHash, records_seen: entries.length, metadata: { format: source.source_url.toLowerCase().endsWith(".xml") ? "xml" : "csv" },
@@ -143,5 +156,5 @@ Deno.serve(async (req) => {
       results.push({ source: source.code, status: "failed", error: message });
     }
   }
-  return Response.json({ results, checked_at: new Date().toISOString() });
+  return Response.json({ results, checked_at: new Date().toISOString() }, { status: results.some((r) => r.status === "failed") ? 502 : 200 });
 });
