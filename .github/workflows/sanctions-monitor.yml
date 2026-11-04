@@ -5,32 +5,68 @@ on:
     - cron: "17 */4 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: sanctions-monitoring
+  cancel-in-progress: false
+
 jobs:
   monitor:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Validate required secrets
         env:
           SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
           SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
         run: |
-          test -n "$SUPABASE_FUNCTIONS_URL" || (echo "Missing SUPABASE_FUNCTIONS_URL secret" && exit 1)
-          test -n "$SANCTIONS_CRON_SECRET" || (echo "Missing SANCTIONS_CRON_SECRET secret" && exit 1)
-      - name: Import sanctions lists
+          test -n "$SUPABASE_FUNCTIONS_URL" || (echo "::error::Missing SUPABASE_FUNCTIONS_URL" && exit 1)
+          test -n "$SANCTIONS_CRON_SECRET" || (echo "::error::Missing SANCTIONS_CRON_SECRET" && exit 1)
+
+      - name: Import sanctions lists and verify results
         env:
           SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
           SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
         run: |
-          curl --fail-with-body --retry 2 --retry-delay 10 \
-            -X POST "$SUPABASE_FUNCTIONS_URL/sanctions-sync" \
+          set -euo pipefail
+          curl --fail-with-body --retry 2 --retry-delay 10 --max-time 600 \
+            -X POST "${SUPABASE_FUNCTIONS_URL%/}/sanctions-sync" \
             -H "Authorization: Bearer $SANCTIONS_CRON_SECRET" \
-            -H "Content-Type: application/json" --data '{}'
+            -H "Content-Type: application/json" --data '{}' > /tmp/sanctions-sync.json
+          python3 - <<'PY'
+          import json,sys
+          with open('/tmp/sanctions-sync.json') as f:
+              data=json.load(f)
+          results=data.get('results')
+          if not isinstance(results,list) or not results:
+              print('::error::Sanctions sync returned no source results')
+              sys.exit(1)
+          failed=[r for r in results if r.get('status') not in ('succeeded','unchanged')]
+          for r in results:
+              print(f"Source {r.get('source','unknown')}: {r.get('status','missing')}"+(f" ({r.get('error')})" if r.get('error') else ''))
+          if failed:
+              print(f'::error::{len(failed)} sanctions source(s) failed')
+              sys.exit(1)
+          PY
+
       - name: Discover intelligence publications
         env:
           SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
           SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
         run: |
-          curl --fail-with-body --retry 2 --retry-delay 10 \
-            -X POST "$SUPABASE_FUNCTIONS_URL/intelligence-discover" \
+          set -euo pipefail
+          curl --fail-with-body --retry 2 --retry-delay 10 --max-time 600 \
+            -X POST "${SUPABASE_FUNCTIONS_URL%/}/intelligence-discover" \
             -H "Authorization: Bearer $SANCTIONS_CRON_SECRET" \
-            -H "Content-Type: application/json" --data '{}'
+            -H "Content-Type: application/json" --data '{}' > /tmp/intelligence-discover.json
+          python3 - <<'PY'
+          import json,sys
+          with open('/tmp/intelligence-discover.json') as f:
+              data=json.load(f)
+          if data.get('error'):
+              print('::error::Intelligence discovery reported an error')
+              sys.exit(1)
+          print('Intelligence discovery returned a response')
+          PY
