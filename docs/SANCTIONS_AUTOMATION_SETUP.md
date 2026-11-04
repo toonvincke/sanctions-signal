@@ -16,7 +16,8 @@ Do not link, migrate or deploy to that separate project.
    is executable **only** by the server-side service role. Verify the migration
    is recorded once in Drizzle's journal.
 3. Deploy updated `supabase/functions/sanctions-sync/index.ts` and shared module
-   `supabase/functions/_shared/sanctions-parsers.ts` into the **same** Lovable
+   `supabase/functions/_shared/sanctions-parsers.ts`, plus the existing
+   `supabase/functions/intelligence-discover/index.ts` endpoint, into the **same** Lovable
    Cloud project. GitHub changes alone do not prove an Edge Function was deployed.
    Configure the `sanctions-sync` endpoint to accept the dedicated cron secret
    without Supabase gateway JWT verification, subject to Lovable's support.
@@ -53,8 +54,10 @@ Do not link, migrate or deploy to that separate project.
   Delisted entries remain in the database for history with `active = false`.
 - Changes to raw list entries do not automatically create verified intelligence
   articles. The editorial review process is separate.
-- The EU list and RSS news discovery are **not production-validated** by this
-  import release and require separate source verification.
+- EU list ingestion and editorial news discovery are **not production-validated**
+  by this import release. The workflow calls `intelligence-discover`, but it
+  processes no articles until RSS/Atom sources are configured. OFAC retired its
+  official RSS feed in January 2025; do not configure its retired feed as live.
 - A passing parser unit test is not equivalent to a successful live import.
 
 ## How to confirm success
