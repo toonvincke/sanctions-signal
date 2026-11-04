@@ -43,6 +43,13 @@
       "when": 1793781912154,
       "tag": "0005_unify_admin_roles_and_lock_helpers",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793799999999,
+      "tag": "0006_atomic_sanctions_import",
+      "breakpoints": true
     }
   ]
 }
