@@ -36,6 +36,13 @@
       "when": 1793781705627,
       "tag": "0004_intelligence_record_history",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793781912154,
+      "tag": "0005_unify_admin_roles_and_lock_helpers",
+      "breakpoints": true
     }
   ]
 }

@@ -46,7 +46,7 @@ This is a newly created, empty project. It currently has no application tables, 
    - `SANCTIONS_CRON_SECRET`: exactly the same value configured in Supabase.
    The workflow runs every four hours and can also be started manually after it is merged into the default branch.
 7. Configure official RSS/Atom sources in `sanctions_sources`. To enable the EU consolidated financial-sanctions list, obtain the current download URL from the European Commission's Financial Sanctions Files portal and configure a dedicated, validated parser. The consolidated financial-sanctions list is not a complete representation of all EU restrictive measures; the Official Journal/legal acts remain authoritative.
-8. Assign reviewer access by setting the user's Supabase Auth `app_metadata.role` to `admin`. Do not use editable user metadata for this role.
+8. Assign reviewer access by adding an `admin` row for the user in `public.user_roles`. This table is the only source of administrator permissions; do not use auth metadata for roles.
 
 ## Important limitations before production use
 
@@ -54,7 +54,7 @@ This is a newly created, empty project. It currently has no application tables, 
 - The UN XML parser maps core individual/entity names, identifiers and selected identifying details. Validate its output against current official samples before relying on it operationally.
 - The current importer upserts observed rows but does not yet mark absent rows as delisted. A reconciliation step must only mark removals after a complete validated snapshot.
 - The discovery function requires RSS/Atom rows; it does not crawl arbitrary HTML pages.
-- Phase 2 candidates are not yet surfaced in an editorial UI. Review candidate rows in Supabase and call `candidate-review` with `candidate_id`, `decision` (`approve` or `reject`) and optional `review_notes`. The authenticated user's `app_metadata.role` must equal `admin`.
+- Phase 2 candidates are not yet surfaced in an editorial UI. Review candidate rows in Supabase and call `candidate-review` with `candidate_id`, `decision` (`approve` or `reject`) and optional `review_notes`. The authenticated user must have the `admin` role in `public.user_roles`.
 - The assistant searches verified records only. It does not query raw list entries or independently interpret legislation. Add a subscription/entitlement check before exposing it to paying users.
 - The scheduled GitHub Actions workflow is not active until both repository secrets are configured and the branch is merged into the default branch.
 - This setup does not copy data from the inaccessible previous Supabase project. Existing records and user accounts will need a separate, authorized migration if they are to be preserved.
