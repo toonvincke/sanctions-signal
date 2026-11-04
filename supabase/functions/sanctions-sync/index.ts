@@ -137,8 +137,16 @@ Deno.serve(async (request) => {
     .select("id,code,name,source_url,jurisdiction").eq("enabled", true).eq("source_type", "sanctions_list");
   if (error) return Response.json({ error: "Cannot list configured sanctions sources" }, { status: 500 });
   if (!sources?.length) return Response.json({ error: "No sanctions sources are enabled" }, { status: 503 });
+  const body = await request.json().catch(() => ({}));
+  const requested = typeof body?.source_code === "string" ? body.source_code : null;
+  if (requested && !supported.has(requested)) {
+    return Response.json({ error: "Unsupported source_code" }, { status: 400 });
+  }
+  // Prefer one source per invocation to stay within Edge Function runtime limits.
+  const selected = requested ? (sources as Source[]).filter((item) => item.code === requested) : sources as Source[];
+  if (!selected.length) return Response.json({ error: "Requested source is not enabled" }, { status: 404 });
   const results = [];
-  for (const source of sources as Source[]) results.push(await importOne(source));
+  for (const source of selected) results.push(await importOne(source));
   return Response.json({ results, checked_at: new Date().toISOString() }, {
     status: results.some((result) => result.status === "failed") ? 502 : 200,
   });
