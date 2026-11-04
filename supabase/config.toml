@@ -1,7 +1,9 @@
-project_id = "hhweignwwtpcqpulcttk"
+# Local development label, NOT a production project reference.
+# Deploy only to the existing Lovable Cloud backend after explicit verification.
+project_id = "sanctions-signal-local"
 
-# These two endpoints authenticate with the dedicated SANCTIONS_CRON_SECRET
-# inside the function, so the Supabase gateway must not require a Supabase JWT.
+# Scheduled endpoints validate their own dedicated SANCTIONS_CRON_SECRET.
+# The hosting gateway must allow requests to reach that check.
 [functions.sanctions-sync]
 verify_jwt = false
 
