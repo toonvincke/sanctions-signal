@@ -11,7 +11,11 @@ Deno.serve(async (req) => {
   if (!token || token === auth) return new Response("Unauthorized", { status: 401 });
   const { data: { user }, error: authError } = await db.auth.getUser(token);
   if (authError || !user) return new Response("Unauthorized", { status: 401 });
-  if (user.app_metadata?.role !== "admin") return new Response("Forbidden", { status: 403 });
+  // Admin permission comes only from public.user_roles (single source of truth).
+  const { data: adminRole, error: roleError } = await db.from("user_roles")
+    .select("id").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+  if (roleError) return new Response("Could not verify permissions", { status: 500 });
+  if (!adminRole) return new Response("Forbidden", { status: 403 });
 
   const body = await req.json().catch(() => ({}));
   const candidateId = typeof body.candidate_id === "string" ? body.candidate_id : "";
