@@ -1,160 +1,145 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { DOMParser } from "https://esm.sh/linkedom@0.18.5";
+import { parseSanctionsCsv, validateSnapshot, type SanctionsEntry } from "../_shared/sanctions-parsers.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const CRON_SECRET = Deno.env.get("SANCTIONS_CRON_SECRET")!;
-const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+const url = Deno.env.get("SUPABASE_URL");
+const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const CRON_SECRET = Deno.env.get("SANCTIONS_CRON_SECRET");
+if (!url || !key) throw new Error("Missing Supabase server configuration");
+const db = createClient(url, key, { auth: { persistSession: false } });
 
 type Source = { id: string; code: string; name: string; source_url: string; jurisdiction: string };
-type Entry = { source_code: string; source_entry_id: string; subject_name: string; subject_type: string | null; programs: string[]; aliases: string[]; identifying_data: Record<string, unknown>; source_url: string; content_hash: string };
+const supported = new Set(["ofac_sdn", "ofac_non_sdn", "uk_sanctions", "un_consolidated"]);
 
-function csvRows(input: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [], field = "", quoted = false;
-  for (let i = 0; i < input.length; i++) {
-    const c = input[i];
-    if (c === '"') {
-      if (quoted && input[i + 1] === '"') { field += '"'; i++; }
-      else quoted = !quoted;
-    } else if (c === "," && !quoted) { row.push(field); field = ""; }
-    else if ((c === "\n" || c === "\r") && !quoted) {
-      if (c === "\r" && input[i + 1] === "\n") i++;
-      row.push(field); field = "";
-      if (row.some((v) => v.trim())) rows.push(row);
-      row = [];
-    } else field += c;
+async function hashText(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, "0")).join("");
+}
+
+function parseUnXml(source: Source, body: string): SanctionsEntry[] {
+  if (!body.includes("<CONSOLIDATED_LIST") && !body.includes("<INDIVIDUALS")) {
+    throw new Error("UN feed does not appear to contain a consolidated sanctions list");
   }
-  row.push(field);
-  if (row.some((v) => v.trim())) rows.push(row);
-  return rows;
-}
-function hashText(text: string): Promise<string> {
-  return crypto.subtle.digest("SHA-256", new TextEncoder().encode(text))
-    .then((digest) => Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join(""));
-}
-function pick(row: string[], headers: string[], candidates: string[]): string {
-  const index = headers.findIndex((h) => candidates.includes(h.toLowerCase().replace(/[^a-z0-9]/g, "")));
-  return index >= 0 ? (row[index] ?? "").trim() : "";
-}
-function mapCsvRows(source: Source, body: string): Entry[] {
-  const rows = csvRows(body);
-  if (!rows.length) return [];
-  const firstHeaders = rows[0].map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ""));
-  const hasHeader = firstHeaders.some((h) => ["uniqueidentifier","uniqueid","sdnname","name","name1","subjectname","fullname","referencenumber"].includes(h));
-  const headers = hasHeader ? rows[0].map((h) => h.trim()) : [];
-  const data = hasHeader ? rows.slice(1) : rows;
-  return data.flatMap((row, index) => {
-    // OFAC SDN CSV has no header: ent_num, name, type, program, title, call sign, vessel type, ...
-    const id = hasHeader
-      ? pick(row, headers, ["uniqueidentifier","uniqueid","id","reference","referencenumber","entnum"])
-      : (row[0] ?? "").trim();
-    const name = hasHeader
-      ? pick(row, headers, ["name","name1","fullname","primaryname","subjectname","entityname","individualname"])
-      : (row[1] ?? "").trim();
-    if (!name) return [];
-    const type = hasHeader ? pick(row, headers, ["type","subjecttype","entitytype","individualentityship"]) : (row[2] ?? "");
-    const program = hasHeader ? pick(row, headers, ["program","regime","sanctionsprogram","regimename"]) : (row[3] ?? "");
-    const raw = Object.fromEntries((headers.length ? headers : row.map((_, i) => String(i))).map((h, i) => [h, row[i] ?? ""]));
-    return [{
-      source_code: source.code, source_entry_id: id || `${source.code}:${index}:${name.toLowerCase()}`,
-      subject_name: name, subject_type: type || null,
-      programs: program ? program.split(/[;,|]/).map((v) => v.trim()).filter(Boolean) : [],
-      aliases: [], identifying_data: raw, source_url: source.source_url, content_hash: "",
-    }];
-  });
-}
-function mapUnXml(source: Source, body: string): Entry[] {
   const doc = new DOMParser().parseFromString(body, "text/xml");
-  if (doc.querySelector("parsererror")) throw new Error("UN XML could not be parsed");
-  const result: Entry[] = [];
+  if (!doc || doc.querySelector("parsererror")) throw new Error("UN XML parsing failed");
+  const result: SanctionsEntry[] = [];
   for (const node of [...doc.querySelectorAll("INDIVIDUAL, ENTITY")]) {
-    const isIndividual = node.tagName === "INDIVIDUAL";
-    const get = (tag: string) => node.querySelector(tag)?.textContent?.trim() ?? "";
-    const id = get(isIndividual ? "INDIVIDUAL_ID" : "ENTITY_ID") || get("REFERENCE_NUMBER");
-    const name = isIndividual
-      ? [get("FIRST_NAME"), get("SECOND_NAME"), get("THIRD_NAME"), get("FOURTH_NAME")].filter(Boolean).join(" ")
-      : get("ENTITY_NAME");
-    if (!id || !name) continue;
+    const individual = node.tagName === "INDIVIDUAL";
+    const field = (tag: string) => node.querySelector(tag)?.textContent?.trim() ?? "";
+    const id = field(individual ? "INDIVIDUAL_ID" : "ENTITY_ID") || field("REFERENCE_NUMBER");
+    const name = individual
+      ? ["FIRST_NAME", "SECOND_NAME", "THIRD_NAME", "FOURTH_NAME"].map(field).filter(Boolean).join(" ")
+      : field("ENTITY_NAME");
+    if (!id || !name) throw new Error("UN record is missing an identifier or designation name");
     const aliases = [...node.querySelectorAll("INDIVIDUAL_ALIAS ALIAS_NAME, ENTITY_ALIAS ALIAS_NAME")]
-      .map((x) => x.textContent?.trim() ?? "").filter(Boolean);
-    const programs = [get("UN_LIST_TYPE")].filter(Boolean);
+      .map((alias) => alias.textContent?.trim() ?? "").filter(Boolean).sort();
     const identifying: Record<string, unknown> = {
-      reference_number: get("REFERENCE_NUMBER"), listed_on: get("LISTED_ON"),
-      comments: get("COMMENTS1"), nationality: [...node.querySelectorAll("NATIONALITY/VALUE")].map((x) => x.textContent?.trim()).filter(Boolean),
-      date_of_birth: [...node.querySelectorAll("INDIVIDUAL_DATE_OF_BIRTH/DATE")].map((x) => x.textContent?.trim()).filter(Boolean),
+      reference_number: field("REFERENCE_NUMBER"),
+      listed_on: field("LISTED_ON"),
+      comments: field("COMMENTS1"),
+      nationality: [...node.querySelectorAll("NATIONALITY/VALUE")].map((n) => n.textContent?.trim()).filter(Boolean),
+      date_of_birth: [...node.querySelectorAll("INDIVIDUAL_DATE_OF_BIRTH/DATE")].map((n) => n.textContent?.trim()).filter(Boolean),
     };
     result.push({
       source_code: source.code, source_entry_id: id, subject_name: name,
-      subject_type: isIndividual ? "individual" : "entity", programs, aliases,
+      subject_type: individual ? "individual" : "entity",
+      programs: [field("UN_LIST_TYPE")].filter(Boolean), aliases: [...new Set(aliases)],
       identifying_data: identifying, source_url: source.source_url, content_hash: "",
     });
   }
-  if (!result.length) throw new Error("UN XML parsed but no individual/entity records were mapped; refusing to mark source current");
   return result;
 }
 
-Deno.serve(async (req) => {
-  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
-  if (!CRON_SECRET || req.headers.get("authorization") !== `Bearer ${CRON_SECRET}`) return new Response("Unauthorized", { status: 401 });
-  const { data: sources, error: sourceError } = await db.from("sanctions_sources")
-    .select("id,code,name,source_url,jurisdiction").eq("enabled", true).eq("source_type", "sanctions_list");
-  if (sourceError) return Response.json({ error: sourceError.message }, { status: 500 });
-
-  const results = [];
-  for (const source of (sources ?? []) as Source[]) {
-    const { data: run } = await db.from("sanctions_import_runs")
-      .insert({ source_id: source.id, source_code: source.code, status: "running" }).select("id").single();
-    try {
-      const response = await fetch(source.source_url, { headers: { "user-agent": "SanctionsSignal/1.0 (+automated compliance data monitoring)" } });
-      if (!response.ok) throw new Error(`Source returned HTTP ${response.status}`);
-      const body = await response.text();
-      if (!body.trim()) throw new Error("Source returned an empty file");
-      const contentHash = await hashText(body);
-      const { data: current } = await db.from("sanctions_sources").select("last_content_hash").eq("id", source.id).single();
-      if (current?.last_content_hash === contentHash) {
-        await db.from("sanctions_import_runs").update({ status: "unchanged", finished_at: new Date().toISOString(), http_status: response.status, content_hash: contentHash }).eq("id", run?.id);
-        await db.from("sanctions_sources").update({ last_checked_at: new Date().toISOString(), last_success_at: new Date().toISOString(), last_error: null }).eq("id", source.id);
-        results.push({ source: source.code, status: "unchanged" });
-        continue;
-      }
-      let entries: Entry[];
-      if (source.code === "un_consolidated") entries = mapUnXml(source, body);
-      else if (source.source_url.toLowerCase().endsWith(".xml")) {
-        throw new Error("No validated XML parser is configured for this source yet");
-      } else entries = mapCsvRows(source, body);
-      if (!entries.length) throw new Error("No entries could be mapped; refusing to mark this source current");
-      // Reject duplicate identifiers and implausibly small snapshots before touching stored data.
-      const ids = new Set(entries.map((entry) => entry.source_entry_id));
-      if (ids.size !== entries.length) throw new Error("Duplicate source identifiers; refusing incomplete snapshot");
-      if (entries.length < 10) throw new Error("Unexpectedly small sanctions snapshot; refusing import");
-      const seenAt = new Date().toISOString();
-      for (const entry of entries) entry.content_hash = await hashText(JSON.stringify(entry.identifying_data));
-      // Avoid API payload limits. Do not mark absent entries inactive here: that requires
-      // atomic, validated full-snapshot reconciliation to prevent false delistings.
-      for (let offset = 0; offset < entries.length; offset += 250) {
-        const batch = entries.slice(offset, offset + 250).map((entry) => ({
-          ...entry, last_seen_at: seenAt, active: true, removed_at: null,
-        }));
-        const { error: upsertError } = await db.from("sanctions_list_entries")
-          .upsert(batch, { onConflict: "source_code,source_entry_id" });
-        if (upsertError) throw upsertError;
-      }
-      await db.from("sanctions_import_runs").update({
-        status: "succeeded", finished_at: new Date().toISOString(), http_status: response.status,
-        content_hash: contentHash, records_seen: entries.length, metadata: { format: source.source_url.toLowerCase().endsWith(".xml") ? "xml" : "csv" },
-      }).eq("id", run?.id);
-      await db.from("sanctions_sources").update({
-        last_checked_at: new Date().toISOString(), last_success_at: new Date().toISOString(),
-        last_content_hash: contentHash, last_error: null,
-      }).eq("id", source.id);
-      results.push({ source: source.code, status: "succeeded", records: entries.length });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      await db.from("sanctions_import_runs").update({ status: "failed", finished_at: new Date().toISOString(), error_message: message }).eq("id", run?.id);
-      await db.from("sanctions_sources").update({ last_checked_at: new Date().toISOString(), last_error: message }).eq("id", source.id);
-      results.push({ source: source.code, status: "failed", error: message });
-    }
+async function reportFailure(source: Source, runId: string | undefined, error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (runId) {
+    const { error: cleanupError } = await db.from("sanctions_import_staging").delete().eq("run_id", runId);
+    if (cleanupError) console.error("Could not clean failed staging run", runId, cleanupError.message);
+    const { error: runError } = await db.from("sanctions_import_runs").update({
+      status: "failed", finished_at: new Date().toISOString(), error_message: message.slice(0, 2000),
+    }).eq("id", runId);
+    if (runError) console.error("Could not save failure status", runId, runError.message);
   }
-  return Response.json({ results, checked_at: new Date().toISOString() }, { status: results.some((r) => r.status === "failed") ? 502 : 200 });
+  const { error: sourceError } = await db.from("sanctions_sources").update({
+    last_checked_at: new Date().toISOString(), last_error: message.slice(0, 2000),
+  }).eq("id", source.id);
+  if (sourceError) console.error("Could not save source failure", source.code, sourceError.message);
+  return { source: source.code, status: "failed", error: message };
+}
+
+async function importOne(source: Source) {
+  let runId: string | undefined;
+  try {
+    if (!supported.has(source.code)) throw new Error("Unsupported sanctions list source");
+    if (!/^https:\/\//i.test(source.source_url)) throw new Error("List URL must use HTTPS");
+    const { data: run, error: runError } = await db.from("sanctions_import_runs")
+      .insert({ source_id: source.id, source_code: source.code, status: "running" }).select("id").single();
+    if (runError || !run) throw new Error(`Cannot start import: ${runError?.message ?? "missing run"}`);
+    runId = run.id;
+    const response = await fetch(source.source_url, {
+      headers: { "user-agent": "SanctionsSignal/1.0 (official sanctions monitoring)" },
+      signal: AbortSignal.timeout(90_000),
+    });
+    if (!response.ok) throw new Error(`Official source returned HTTP ${response.status}`);
+    const body = await response.text();
+    if (body.length < 100) throw new Error("Unexpectedly empty source file");
+    const contentHash = await hashText(body);
+    const { data: current, error: stateError } = await db.from("sanctions_sources")
+      .select("last_content_hash,last_success_at").eq("id", source.id).single();
+    if (stateError) throw stateError;
+    if (current?.last_success_at && current.last_content_hash === contentHash) {
+      const now = new Date().toISOString();
+      const { error: runUpdate } = await db.from("sanctions_import_runs").update({
+        status: "unchanged", finished_at: now, http_status: response.status, content_hash: contentHash,
+      }).eq("id", runId);
+      if (runUpdate) throw runUpdate;
+      const { error: sourceUpdate } = await db.from("sanctions_sources").update({
+        last_checked_at: now, last_success_at: now, last_error: null,
+      }).eq("id", source.id);
+      if (sourceUpdate) throw sourceUpdate;
+      return { source: source.code, status: "unchanged" };
+    }
+    const entries = source.code === "un_consolidated"
+      ? parseUnXml(source, body) : parseSanctionsCsv(source, body);
+    validateSnapshot(entries);
+    for (const entry of entries) {
+      entry.content_hash = await hashText(JSON.stringify({
+        name: entry.subject_name, type: entry.subject_type,
+        programs: entry.programs, aliases: entry.aliases, details: entry.identifying_data,
+      }));
+    }
+    // Stage without modifying the currently visible sanctions list.
+    for (let offset = 0; offset < entries.length; offset += 250) {
+      const batch = entries.slice(offset, offset + 250).map((entry) => ({
+        ...entry, run_id: runId,
+      }));
+      const { error } = await db.from("sanctions_import_staging").insert(batch);
+      if (error) throw new Error(`Staging failed at row ${offset}: ${error.message}`);
+    }
+    // Single database transaction validates counts, upserts changes, reconciles
+    // missing entries, records import stats, and deletes staging rows.
+    const { data: summary, error: finalError } = await db.rpc("finalize_sanctions_import", {
+      p_run_id: runId, p_content_hash: contentHash, p_http_status: response.status,
+    });
+    if (finalError) throw new Error(`Finalization failed: ${finalError.message}`);
+    return summary as { source: string; status: string; records: number; added: number; changed: number; removed: number };
+  } catch (error) {
+    return await reportFailure(source, runId, error);
+  }
+}
+
+Deno.serve(async (request) => {
+  if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
+  if (!CRON_SECRET || request.headers.get("authorization") !== `Bearer ${CRON_SECRET}`) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  const { data: sources, error } = await db.from("sanctions_sources")
+    .select("id,code,name,source_url,jurisdiction").eq("enabled", true).eq("source_type", "sanctions_list");
+  if (error) return Response.json({ error: "Cannot list configured sanctions sources" }, { status: 500 });
+  if (!sources?.length) return Response.json({ error: "No sanctions sources are enabled" }, { status: 503 });
+  const results = [];
+  for (const source of sources as Source[]) results.push(await importOne(source));
+  return Response.json({ results, checked_at: new Date().toISOString() }, {
+    status: results.some((result) => result.status === "failed") ? 502 : 200,
+  });
 });
