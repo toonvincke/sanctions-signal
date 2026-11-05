@@ -2,6 +2,7 @@ import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteChrome";
 import { RegimeHero, SourceBox } from "@/components/site/RegimeHero";
 import { REGIMES, type RegimeSlug } from "@/lib/sanctions-programs";
+import { programmeSlug } from "@/lib/programme-detail";
 
 export const Route = createFileRoute("/sanctions/$regime")({
   loader: ({ params }) => {
@@ -63,7 +64,13 @@ function RegimePage() {
                   {g.programs.map((p) => (
                     <tr key={p.name} className="align-top">
                       <td className="py-3 pr-4 font-medium">
-                        {p.name}
+                        <Link
+                          to="/sanctions/$regime/$program"
+                          params={{ regime: slug, program: programmeSlug(p.name) }}
+                          className="text-brand underline-offset-4 hover:underline focus-visible:underline"
+                        >
+                          {p.name}
+                        </Link>
                         <div className="mt-1 font-mono text-[11px] font-normal text-muted-foreground md:hidden">{p.basis}</div>
                       </td>
                       <td className="hidden py-3 pr-4 font-mono text-[12px] text-muted-foreground md:table-cell">{p.basis ?? "—"}</td>
