@@ -83,12 +83,14 @@ function ukCsv(source: SanctionsSource, input: string): SanctionsEntry[] {
     primary: string; primaryKind: number; aliases: string[]; programs: string[];
     subjectType: string | null; primaryDetails: Record<string, string>;
   }>();
-  for (const [offset, row] of rows.slice(headerIndex + 1).entries()) {
+  // Avoid allocating a second large array for UK rows.
+  for (let rowIndex = headerIndex + 1; rowIndex < rows.length; rowIndex++) {
+    const row = rows[rowIndex];
     const id = column(row, "Unique ID");
     const parts = ["Name 1", "Name 2", "Name 3", "Name 4", "Name 5", "Name 6"]
       .map((name) => column(row, name)).filter(Boolean);
     const name = parts.join(" ");
-    if (!id || !name) throw new Error(`Malformed UKSL CSV row ${headerIndex + offset + 2}`);
+    if (!id || !name) throw new Error(`Malformed UKSL CSV row ${rowIndex + 1}`);
     const nameType = normalize(column(row, "Name type"));
     const kind = nameType === "primaryname" ? 3 : nameType === "primarynamevariation" ? 2 : nameType === "alias" ? 0 : 1;
     const regime = column(row, "Regime Name");
