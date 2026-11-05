@@ -4,7 +4,7 @@ import { XMLParser, XMLValidator } from "npm:fast-xml-parser@5.11.2";
 import type { SanctionsEntry, SanctionsSource } from "./sanctions-parsers.ts";
 
 type XmlValue = string | number | boolean | null | undefined | XmlObject | XmlValue[];
-type XmlObject = Record<string, XmlValue>;
+interface XmlObject { [key: string]: XmlValue; }
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "@_",
