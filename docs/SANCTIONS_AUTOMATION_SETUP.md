@@ -1,68 +1,92 @@
-# Sanctions Signal automation — deployment and operator checklist
+# Sanctions Signal — monitoring deployment checklist
 
-This branch contains the first implementation layer for the three-phase roadmap. It does not alter the existing public pages.
+**Active environment:** Lovable Cloud attached to the existing Sanctions Signal app.
+Existing users and intelligence records must remain unchanged.
+The older instructions pointing to a separate, empty Supabase project are obsolete.
+Do not link, migrate or deploy to that separate project.
 
-## Target Supabase project
+## Deployment order (important)
 
-- Project name: `sanctions-signal`
-- Project ref: `hhweignwwtpcqpulcttk`
-- Region: Frankfurt (EU)
-- Project URL: `https://hhweignwwtpcqpulcttk.supabase.co`
+1. Take/verify a restorable Lovable Cloud database backup. Do **not** replay Drizzle
+   0000–0005, or the duplicate `supabase/migrations` versions of the core schema.
+2. Apply **only** the new Drizzle migration
+   `drizzle/migrations/0006_atomic_sanctions_import.sql` to the existing Lovable
+   Cloud database using its native migration tooling. Confirm the table
+   `public.sanctions_import_staging` exists and `public.finalize_sanctions_import`
+   is executable **only** by the server-side service role. Verify the migration
+   is recorded once in Drizzle's journal.
+3. Deploy updated `supabase/functions/sanctions-sync/index.ts` and shared module
+   `supabase/functions/_shared/sanctions-parsers.ts`, plus the existing
+   `supabase/functions/intelligence-discover/index.ts` endpoint, into the **same** Lovable
+   Cloud project. GitHub changes alone do not prove an Edge Function was deployed.
+   Configure the `sanctions-sync` endpoint to accept the dedicated cron secret
+   without Supabase gateway JWT verification, subject to Lovable's support.
+4. In Lovable Cloud server-side function secrets, configure
+   `SANCTIONS_CRON_SECRET` to a securely generated random value (32+ bytes).
+   Keep `SUPABASE_SERVICE_ROLE_KEY` server-side; never commit, log, or share
+   its value. Check that `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
+   already point to the **active** Lovable Cloud backend.
+5. In GitHub repository Settings → Secrets and variables → Actions, configure:
+   - `SUPABASE_FUNCTIONS_URL`: **active Lovable Cloud** functions base URL,
+     ending in `/functions/v1` if using the standard Supabase route.
+   - `SANCTIONS_CRON_SECRET`: the **same** secret as the Cloud function.
+   Do not reuse an old external Supabase project URL.
+6. Run a single, authorized manual import; verify the run log shows four source
+   results and no failures. Inspect actual entries, counts, aliases, active flags,
+   and three changes (addition, edit, removal) in a **separate test environment**.
+   Production imports should not inject or fabricate sanctions data.
+7. Enable the GitHub workflow `.github/workflows/sanctions-monitor.yml`
+   (four-hour schedule) only after successful manual validation. Confirm the
+   next scheduled run and review `sanctions_import_runs` and function logs.
+   Configure GitHub Actions failure notifications to an appropriate operator.
 
-This is a newly created, empty project. It currently has no application tables, database migrations, or Edge Functions. The monitoring migrations assume that the application table `public.intelligence_records` (and its related tables and enums) already exists. The original project was not accessible during setup, so its database schema and data have not been copied. The core schema and sample records are therefore included as the first two migrations in `supabase/migrations`; apply all migrations in filename order (see "Required setup").
+## Quality and safety rules
 
-## What is included
+- Official sources: OFAC SDN and Non-SDN, UK Sanctions List, UN Consolidated List.
+- UKSL uses one designation ID across several name/alias rows. The importer
+  consolidates those rows by Unique ID. This is **not** the historical OFSI
+  Consolidated List (retired as an updating source on 28 January 2026).
+- The importer stages all rows and finalizes atomically. If staging, validation,
+  or finalization fails, the current list is left unchanged and the run fails.
+- Unusually large (over 2%) source-level contractions are blocked for human
+  review; this is a safety guard, not a guarantee that all delistings are correct.
+- Only fully validated snapshots are permitted to mark missing entries inactive.
+  Delisted entries remain in the database for history with `active = false`.
+- Changes to raw list entries do not automatically create verified intelligence
+  articles. The editorial review process is separate.
+- EU list ingestion and editorial news discovery are **not production-validated**
+  by this import release. The workflow calls `intelligence-discover`, but it
+  processes no articles until RSS/Atom sources are configured. OFAC retired its
+  official RSS feed in January 2025; do not configure its retired feed as live.
+- A passing parser unit test is not equivalent to a successful live import.
 
-- **Phase 1 — list monitoring:** scheduled checks for OFAC SDN, OFAC consolidated non-SDN primary names, the UK Sanctions List CSV and the UN consolidated XML. The EU export is not enabled until a current download URL and parser are configured.
-- **Phase 2 — intelligence discovery:** RSS/Atom discovery stores new publications as `pending_review` candidates and can generate structured AI drafts when `OPENAI_API_KEY` is configured. A separate `candidate-review` function lets an authenticated administrator approve or reject a candidate. No candidate is published automatically.
-- **Phase 3 — research assistant foundation:** an authenticated Edge Function retrieves only existing records marked `verification_status='verified'`, then generates a cited research answer. It is not a legal decision engine. A database trigger snapshots previous record versions before updates.
+## How to confirm success
 
-## Required setup
+```sql
+select code, enabled, last_success_at, last_error
+from public.sanctions_sources
+where source_type = 'sanctions_list'
+order by code;
 
-1. Connect the Lovable application to the new Supabase project. Set the browser-safe environment variables in the Lovable project:
-   - `VITE_SUPABASE_URL=https://hhweignwwtpcqpulcttk.supabase.co`
-   - `VITE_SUPABASE_PUBLISHABLE_KEY`: copy the publishable key from Supabase Project Settings → API Keys. It is intended for browser use; never use the service-role key here.
-2. Create the core application schema (including `intelligence_records`, `jurisdictions`, `regimes`, `authorities`, `categories`, `bookmarks`, `record_categories`, and the `content_type`, `legal_status`, and `verification_status` enums). This schema, its RLS policies and the sample records are included as the first two Supabase migrations (copies of `drizzle/migrations/0000_migration.sql` and `0001_migration.sql`). Verify the RLS policies before exposing the new project to users.
-3. Apply all migrations in `supabase/migrations` in filename order, for example with `supabase link --project-ref hhweignwwtpcqpulcttk` followed by `supabase db push`. The monitoring migrations depend on the core schema, so the order matters:
-   - `202611010001_core_schema.sql`
-   - `202611010002_core_seed.sql`
-   - `202611020001_sanctions_monitoring.sql`
-   - `202611020002_intelligence_record_history.sql`
+select source_code, status, started_at, records_seen,
+       records_added, records_changed, records_removed, error_message
+from public.sanctions_import_runs
+order by started_at desc
+limit 12;
 
-   These files are not idempotent (the core schema uses plain `create type`/`create table`). Apply them once to an empty project; do not re-run them against a project that already has the tables.
-   After the migrations are applied, regenerate `src/integrations/supabase/types.ts` so it also contains the monitoring tables (for example with `supabase gen types typescript --project-id hhweignwwtpcqpulcttk`).
-4. Deploy all four Edge Functions from this branch:
-   - `sanctions-sync`
-   - `intelligence-discover`
-   - `candidate-review`
-   - `assistant`
-5. Set Edge Function secrets in Supabase:
-   - `SANCTIONS_CRON_SECRET`: a long random secret (at least 32 bytes).
-   - `OPENAI_API_KEY`: enables AI draft generation and the research assistant.
-   - `OPENAI_MODEL`: optional; defaults to `gpt-4.1-mini`.
-   - Supabase normally injects `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; verify they exist in the deployed function environment. Never put the service-role key in browser code or GitHub.
-6. In GitHub → Settings → Secrets and variables → Actions, add:
-   - `SUPABASE_FUNCTIONS_URL=https://hhweignwwtpcqpulcttk.supabase.co/functions/v1`
-   - `SANCTIONS_CRON_SECRET`: exactly the same value configured in Supabase.
-   The workflow runs every four hours and can also be started manually after it is merged into the default branch.
-7. Configure official RSS/Atom sources in `sanctions_sources`. To enable the EU consolidated financial-sanctions list, obtain the current download URL from the European Commission's Financial Sanctions Files portal and configure a dedicated, validated parser. The consolidated financial-sanctions list is not a complete representation of all EU restrictive measures; the Official Journal/legal acts remain authoritative.
-8. Assign reviewer access by adding an `admin` row for the user in `public.user_roles`. This table is the only source of administrator permissions; do not use auth metadata for roles.
+select source_code, active, count(*)
+from public.sanctions_list_entries
+group by source_code, active
+order by source_code, active;
+```
 
-## Important limitations before production use
+All four configured sanctions-list sources should show recent successful runs,
+and the schedule must continue running. **Never claim monitoring is live solely
+because GitHub code is merged.**
 
-- The OFAC and UK CSV formats can change. Check import run counts and sample entries after the first manual run.
-- The UN XML parser maps core individual/entity names, identifiers and selected identifying details. Validate its output against current official samples before relying on it operationally.
-- The current importer upserts observed rows but does not yet mark absent rows as delisted. A reconciliation step must only mark removals after a complete validated snapshot.
-- The discovery function requires RSS/Atom rows; it does not crawl arbitrary HTML pages.
-- Phase 2 candidates are not yet surfaced in an editorial UI. Review candidate rows in Supabase and call `candidate-review` with `candidate_id`, `decision` (`approve` or `reject`) and optional `review_notes`. The authenticated user must have the `admin` role in `public.user_roles`.
-- The assistant searches verified records only. It does not query raw list entries or independently interpret legislation. Add a subscription/entitlement check before exposing it to paying users.
-- The scheduled GitHub Actions workflow is not active until both repository secrets are configured and the branch is merged into the default branch.
-- This setup does not copy data from the inaccessible previous Supabase project. Existing records and user accounts will need a separate, authorized migration if they are to be preserved.
+## Official format references
 
-## Official source references
-
-- OFAC SLS and data files: https://ofac.treasury.gov/sanctions-list-service and https://sanctionslist.ofac.treas.gov/Home/ConsolidatedList
-- UK Sanctions List: https://www.gov.uk/government/publications/the-uk-sanctions-list
-- UN consolidated list: https://scsanctions.un.org/resources/xml/en/consolidated.xml
-- EU consolidated financial-sanctions list: https://data.europa.eu/data/datasets/consolidated-list-of-persons-groups-and-entities-subject-to-eu-financial-sanctions
-- EU sanctions resources and legal acts: https://finance.ec.europa.eu/eu-and-world/sanctions-restrictive-measures/overview-sanctions-and-related-resources_en
+- OFAC SLS: https://ofac.treasury.gov/sanctions-list-service
+- UKSL format: https://www.gov.uk/guidance/format-guide-for-the-uk-sanctions-list
+- UKSL current downloads: https://www.gov.uk/government/publications/the-uk-sanctions-list
+- UN: https://scsanctions.un.org/resources/xml/en/consolidated.xml

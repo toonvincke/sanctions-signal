@@ -5,32 +5,81 @@ on:
     - cron: "17 */4 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: sanctions-monitoring
+  cancel-in-progress: false
+
 jobs:
   monitor:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Validate required secrets
         env:
           SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
           SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
         run: |
-          test -n "$SUPABASE_FUNCTIONS_URL" || (echo "Missing SUPABASE_FUNCTIONS_URL secret" && exit 1)
-          test -n "$SANCTIONS_CRON_SECRET" || (echo "Missing SANCTIONS_CRON_SECRET secret" && exit 1)
-      - name: Import sanctions lists
+          test -n "$SUPABASE_FUNCTIONS_URL" || (echo "::error::Missing SUPABASE_FUNCTIONS_URL" && exit 1)
+          test -n "$SANCTIONS_CRON_SECRET" || (echo "::error::Missing SANCTIONS_CRON_SECRET" && exit 1)
+
+      - name: Import and validate all four official sanctions sources
         env:
           SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
           SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
         run: |
-          curl --fail-with-body --retry 2 --retry-delay 10 \
-            -X POST "$SUPABASE_FUNCTIONS_URL/sanctions-sync" \
-            -H "Authorization: Bearer $SANCTIONS_CRON_SECRET" \
-            -H "Content-Type: application/json" --data '{}'
-      - name: Discover intelligence publications
+          set -euo pipefail
+          for source in ofac_sdn ofac_non_sdn uk_sanctions un_consolidated; do
+            echo "Checking $source"
+            curl --silent --show-error --fail-with-body --retry 2 --retry-delay 10 --max-time 300 \
+              -X POST "${SUPABASE_FUNCTIONS_URL%/}/sanctions-sync" \
+              -H "Authorization: Bearer $SANCTIONS_CRON_SECRET" \
+              -H "Content-Type: application/json" \
+              --data "{\"source_code\":\"$source\"}" > /tmp/sanctions-sync.json
+            python3 - "$source" <<'PY'
+          import json,sys
+          source=sys.argv[1]
+          with open('/tmp/sanctions-sync.json') as f:
+              data=json.load(f)
+          results=data.get('results')
+          if not isinstance(results,list) or len(results)!=1:
+              print('::error::Expected exactly one source result')
+              sys.exit(1)
+          result=results[0]
+          status=result.get('status')
+          if result.get('source')!=source or status not in ('succeeded','unchanged'):
+              print(f'::error::Import failed for {source}: {status} - {result.get("error","")}')
+              sys.exit(1)
+          print(f'{source}: {status}, records={result.get("records","unchanged")}, added={result.get("added",0)}, changed={result.get("changed",0)}, removed={result.get("removed",0)}')
+          PY
+          done
+
+      - name: Discover intelligence publications (if RSS sources configured)
         env:
           SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
           SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
         run: |
-          curl --fail-with-body --retry 2 --retry-delay 10 \
-            -X POST "$SUPABASE_FUNCTIONS_URL/intelligence-discover" \
+          set -euo pipefail
+          curl --silent --show-error --fail-with-body --retry 2 --retry-delay 10 --max-time 300 \
+            -X POST "${SUPABASE_FUNCTIONS_URL%/}/intelligence-discover" \
             -H "Authorization: Bearer $SANCTIONS_CRON_SECRET" \
-            -H "Content-Type: application/json" --data '{}'
+            -H "Content-Type: application/json" --data '{}' > /tmp/intelligence-discover.json
+          python3 - <<'PY'
+          import json,sys
+          with open('/tmp/intelligence-discover.json') as f:
+              data=json.load(f)
+          if data.get('error'):
+              print('::error::Intelligence discovery reported an error')
+              sys.exit(1)
+          results=data.get('results')
+          if not isinstance(results,list):
+              print('::error::Invalid intelligence discovery response')
+              sys.exit(1)
+          failed=[r for r in results if r.get('status')!='succeeded']
+          if failed:
+              print(f'::error::{len(failed)} publication source(s) failed')
+              sys.exit(1)
+          print(f'Intelligence discovery checked {len(results)} RSS feed(s)')
+          PY
