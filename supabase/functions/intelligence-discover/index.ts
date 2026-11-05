@@ -1,20 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { DOMParser } from "https://esm.sh/linkedom@0.18.5";
-
-// linkedom returns DOM-like nodes; the Deno runtime has no built-in DOM types.
-// deno-lint-ignore no-explicit-any
-type Element = any;
+import { parsePublicationFeed } from "../_shared/xml-feeds.ts";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 const CRON_SECRET = Deno.env.get("SANCTIONS_CRON_SECRET")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
-function textOf(node: Element | null, selector: string) {
-  return node?.querySelector(selector)?.textContent?.trim() ?? "";
-}
-function decodeXml(value: string) {
-  return value.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
-}
 function sha(value: string) {
   return crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)).then((b) =>
     Array.from(new Uint8Array(b), (x) => x.toString(16).padStart(2, "0")).join(""));
@@ -58,17 +48,7 @@ Deno.serve(async (req) => {
       const response = await fetch(source.source_url, { headers: { "user-agent": "SanctionsSignal/1.0" } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const xml = await response.text();
-      const doc = new DOMParser().parseFromString(xml, "text/xml");
-      if (doc.querySelector("parsererror")) throw new Error("Invalid RSS/Atom XML");
-      const items = [...doc.querySelectorAll("item")].map((item) => ({
-        title: textOf(item, "title"), url: textOf(item, "link"), date: textOf(item, "pubDate"),
-        description: decodeXml(textOf(item, "description")),
-      })).concat([...doc.querySelectorAll("entry")].map((item) => ({
-        title: textOf(item, "title"),
-        url: item.querySelector("link[rel='alternate']")?.getAttribute("href") ?? item.querySelector("link")?.getAttribute("href") ?? "",
-        date: textOf(item, "published") || textOf(item, "updated"),
-        description: decodeXml(textOf(item, "summary") || textOf(item, "content")),
-      })));
+      const items = parsePublicationFeed(xml);
       let discovered = 0, drafted = 0;
       for (const item of items.slice(0, 30)) {
         if (!item.title || !item.url || !/^https:\/\//i.test(item.url)) continue;
@@ -100,5 +80,5 @@ Deno.serve(async (req) => {
       results.push({ source: source.code, status: "failed", error: error instanceof Error ? error.message : String(error) });
     }
   }
-  return Response.json({ results, checked_at: new Date().toISOString() });
+  return Response.json({ results, checked_at: new Date().toISOString() }, { status: results.some((r) => r.status === "failed") ? 502 : 200 });
 });
