@@ -22,8 +22,19 @@ jobs:
           SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
           SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
         run: |
-          test -n "$SUPABASE_FUNCTIONS_URL" || (echo "::error::Missing SUPABASE_FUNCTIONS_URL" && exit 1)
-          test -n "$SANCTIONS_CRON_SECRET" || (echo "::error::Missing SANCTIONS_CRON_SECRET" && exit 1)
+          set -euo pipefail
+          missing=0
+          for key in SUPABASE_FUNCTIONS_URL SANCTIONS_CRON_SECRET; do
+            if [ -z "${!key}" ]; then
+              echo "::error title=Missing configuration::Set GitHub Actions secret $key (see docs/monitoring-runbook.md)"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+          case "$SUPABASE_FUNCTIONS_URL" in
+            https://* ) ;;
+            * ) echo "::error::SUPABASE_FUNCTIONS_URL must be an HTTPS base URL"; exit 1 ;;
+          esac
 
       - name: Import and validate all four official sanctions sources
         env:
@@ -50,7 +61,7 @@ jobs:
           result=results[0]
           status=result.get('status')
           if result.get('source')!=source or status not in ('succeeded','unchanged'):
-              print(f'::error::Import failed for {source}: {status} - {result.get("error","")}')
+              print(f'::error::Import failed for {source}: {status}')
               sys.exit(1)
           print(f'{source}: {status}, records={result.get("records","unchanged")}, added={result.get("added",0)}, changed={result.get("changed",0)}, removed={result.get("removed",0)}')
           PY
