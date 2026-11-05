@@ -1,3 +1,4 @@
+import { extractResponseText } from "../_shared/openai-response.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -43,6 +44,12 @@ Deno.serve(async (req) => {
   });
   if (!response.ok) return Response.json({ error: "AI provider request failed." }, { status: 502 });
   const result = await response.json();
-  const answer = result.output_text ?? "I could not generate an answer from the available verified records.";
+  let answer: string;
+  try {
+    answer = extractResponseText(result);
+  } catch (error) {
+    console.error("AI assistant response invalid:", error instanceof Error ? error.message : String(error));
+    return Response.json({ error: "AI provider returned an unusable response." }, { status: 502 });
+  }
   return Response.json({ answer, sources: context.map(({ citation, headline, source_url, publication_date }) => ({ citation, headline, source_url, publication_date })), disclaimer: "Research support only — not legal advice." });
 });
