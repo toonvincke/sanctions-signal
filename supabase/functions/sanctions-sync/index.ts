@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { DOMParser } from "https://esm.sh/linkedom@0.18.5";
+import { parseUnConsolidated } from "../_shared/xml-feeds.ts";
 import { parseSanctionsCsv, validateSnapshot, type SanctionsEntry } from "../_shared/sanctions-parsers.ts";
 
 const url = Deno.env.get("SUPABASE_URL");
@@ -14,40 +14,6 @@ const supported = new Set(["ofac_sdn", "ofac_non_sdn", "uk_sanctions", "un_conso
 async function hashText(text: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, "0")).join("");
-}
-
-function parseUnXml(source: Source, body: string): SanctionsEntry[] {
-  if (!body.includes("<CONSOLIDATED_LIST") && !body.includes("<INDIVIDUALS")) {
-    throw new Error("UN feed does not appear to contain a consolidated sanctions list");
-  }
-  const doc = new DOMParser().parseFromString(body, "text/xml");
-  if (!doc || doc.querySelector("parsererror")) throw new Error("UN XML parsing failed");
-  const result: SanctionsEntry[] = [];
-  for (const node of [...doc.querySelectorAll("INDIVIDUAL, ENTITY")]) {
-    const individual = node.tagName === "INDIVIDUAL";
-    const field = (tag: string) => node.querySelector(tag)?.textContent?.trim() ?? "";
-    const id = field(individual ? "INDIVIDUAL_ID" : "ENTITY_ID") || field("REFERENCE_NUMBER");
-    const name = individual
-      ? ["FIRST_NAME", "SECOND_NAME", "THIRD_NAME", "FOURTH_NAME"].map(field).filter(Boolean).join(" ")
-      : field("ENTITY_NAME");
-    if (!id || !name) throw new Error("UN record is missing an identifier or designation name");
-    const aliases = [...node.querySelectorAll("INDIVIDUAL_ALIAS ALIAS_NAME, ENTITY_ALIAS ALIAS_NAME")]
-      .map((alias) => alias.textContent?.trim() ?? "").filter(Boolean).sort();
-    const identifying: Record<string, unknown> = {
-      reference_number: field("REFERENCE_NUMBER"),
-      listed_on: field("LISTED_ON"),
-      comments: field("COMMENTS1"),
-      nationality: [...node.querySelectorAll("NATIONALITY/VALUE")].map((n) => n.textContent?.trim()).filter(Boolean),
-      date_of_birth: [...node.querySelectorAll("INDIVIDUAL_DATE_OF_BIRTH/DATE")].map((n) => n.textContent?.trim()).filter(Boolean),
-    };
-    result.push({
-      source_code: source.code, source_entry_id: id, subject_name: name,
-      subject_type: individual ? "individual" : "entity",
-      programs: [field("UN_LIST_TYPE")].filter(Boolean), aliases: [...new Set(aliases)],
-      identifying_data: identifying, source_url: source.source_url, content_hash: "",
-    });
-  }
-  return result;
 }
 
 async function reportFailure(source: Source, runId: string | undefined, error: unknown) {
@@ -100,7 +66,7 @@ async function importOne(source: Source) {
       return { source: source.code, status: "unchanged" };
     }
     const entries = source.code === "un_consolidated"
-      ? parseUnXml(source, body) : parseSanctionsCsv(source, body);
+      ? parseUnConsolidated(source, body) : parseSanctionsCsv(source, body);
     validateSnapshot(entries);
     for (const entry of entries) {
       entry.content_hash = await hashText(JSON.stringify({

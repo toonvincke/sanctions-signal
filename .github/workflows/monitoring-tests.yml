@@ -4,6 +4,7 @@ on:
     paths:
       - "supabase/functions/_shared/**"
       - "supabase/functions/sanctions-sync/**"
+      - "supabase/functions/intelligence-discover/**"
       - "drizzle/migrations/0006*"
       - "tests/sql/**"
       - ".github/workflows/monitoring-tests.yml"
@@ -22,6 +23,18 @@ jobs:
           node-version: '22'
       - name: Run parser tests
         run: node --experimental-strip-types --test supabase/functions/_shared/sanctions-parsers.test.mjs
+
+  xml-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check XML parser
+        run: deno check --node-modules-dir=auto supabase/functions/_shared/xml-feeds.ts
+      - name: Test UN XML and RSS/Atom parsing
+        run: deno test --node-modules-dir=auto supabase/functions/_shared/xml-feeds.test.ts
 
   database-tests:
     runs-on: ubuntu-latest
