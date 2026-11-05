@@ -520,6 +520,53 @@ export type Database = {
           },
         ]
       }
+      sanctions_import_staging: {
+        Row: {
+          aliases: string[]
+          content_hash: string
+          identifying_data: Json
+          programs: string[]
+          run_id: string
+          source_code: string
+          source_entry_id: string
+          source_url: string
+          subject_name: string
+          subject_type: string | null
+        }
+        Insert: {
+          aliases?: string[]
+          content_hash: string
+          identifying_data?: Json
+          programs?: string[]
+          run_id: string
+          source_code: string
+          source_entry_id: string
+          source_url: string
+          subject_name: string
+          subject_type?: string | null
+        }
+        Update: {
+          aliases?: string[]
+          content_hash?: string
+          identifying_data?: Json
+          programs?: string[]
+          run_id?: string
+          source_code?: string
+          source_entry_id?: string
+          source_url?: string
+          subject_name?: string
+          subject_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sanctions_import_staging_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "sanctions_import_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sanctions_list_entries: {
         Row: {
           active: boolean
@@ -648,6 +695,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      finalize_sanctions_import: {
+        Args: {
+          p_content_hash: string
+          p_http_status?: number
+          p_run_id: string
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
