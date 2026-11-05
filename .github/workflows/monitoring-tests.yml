@@ -67,8 +67,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-      - run: npm ci
+      - name: Install test runner
+        run: npm install --no-save --no-package-lock vitest@4.1.10
       - name: Test OpenAI parsing, validation and mocked HTTP integration
         run: npx vitest run supabase/functions/_shared/openai-response.test.ts supabase/functions/_shared/intelligence-draft.test.ts supabase/functions/_shared/openai-client.test.ts
       - uses: denoland/setup-deno@v2
