@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Validate required secrets
+        id: config
         env:
           SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
           SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
@@ -42,14 +43,19 @@ jobs:
           SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
         run: |
           set -euo pipefail
+          failures=0
           for source in ofac_sdn ofac_non_sdn uk_sanctions un_consolidated; do
             echo "Checking $source"
-            curl --silent --show-error --fail-with-body --retry 2 --retry-delay 10 --max-time 300 \
+            if ! curl --silent --show-error --fail-with-body --retry 2 --retry-delay 10 --max-time 300 \
               -X POST "${SUPABASE_FUNCTIONS_URL%/}/sanctions-sync" \
               -H "Authorization: Bearer $SANCTIONS_CRON_SECRET" \
               -H "Content-Type: application/json" \
-              --data "{\"source_code\":\"$source\"}" > /tmp/sanctions-sync.json
-            python3 - "$source" <<'PY'
+              --data "{\"source_code\":\"$source\"}" > /tmp/sanctions-sync.json; then
+              echo "::error::HTTP import request failed for $source"
+              failures=$((failures + 1))
+              continue
+            fi
+            if ! python3 - "$source" <<'PY'
           import json,sys
           source=sys.argv[1]
           with open('/tmp/sanctions-sync.json') as f:
@@ -65,9 +71,17 @@ jobs:
               sys.exit(1)
           print(f'{source}: {status}, records={result.get("records","unchanged")}, added={result.get("added",0)}, changed={result.get("changed",0)}, removed={result.get("removed",0)}')
           PY
+            then
+              failures=$((failures + 1))
+            fi
           done
+          if [ "$failures" -gt 0 ]; then
+            echo "::error::$failures sanctions source(s) failed"
+            exit 1
+          fi
 
       - name: Discover intelligence publications (if RSS sources configured)
+        if: ${{ always() && steps.config.outcome == 'success' }}
         env:
           SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
           SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
