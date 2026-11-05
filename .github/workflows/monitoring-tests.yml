@@ -32,9 +32,9 @@ jobs:
         with:
           deno-version: v2.x
       - name: Type-check XML parser
-        run: deno check supabase/functions/_shared/xml-feeds.ts
+        run: deno check --node-modules-dir=auto supabase/functions/_shared/xml-feeds.ts
       - name: Test UN XML and RSS/Atom parsing
-        run: deno test supabase/functions/_shared/xml-feeds.test.ts
+        run: deno test --node-modules-dir=auto supabase/functions/_shared/xml-feeds.test.ts
 
   database-tests:
     runs-on: ubuntu-latest
