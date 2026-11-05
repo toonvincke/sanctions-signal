@@ -32,3 +32,22 @@ describe("OFAC trailing sentinel", () => {
     expect(() => parseSanctionsCsv(sdn, "-0-\n")).toThrow("OFAC CSV is empty");
   });
 });
+
+describe("UK source grouping", () => {
+  const source = { code: "uk_sanctions", source_url: "https://example.org/uk.csv" };
+  const header = "Unique ID,Name 1,Name 2,Name 3,Name 4,Name 5,Name 6,Name type,Regime Name";
+  it("groups primary and alias rows without duplicating designations", () => {
+    const csv = ["Report date: 2026-11-05", header,
+      "UK1,Example,,,,,Person,Primary name,Regime A",
+      "UK1,Alias,,,,,Person,Alias,Regime A",
+      "UK2,Another,,,,,Entity,Primary name,Regime B"].join("\n");
+    const entries = parseSanctionsCsv(source, csv);
+    expect(entries).toHaveLength(2);
+    expect(entries[0].aliases).toContain("Alias Person");
+    validateSnapshot(entries, 2);
+  });
+  it("rejects missing UK designation IDs", () => {
+    expect(() => parseSanctionsCsv(source, [header, ",Example,,,,,Person,Primary name,Regime A"].join("\n")))
+      .toThrow(/Malformed UKSL CSV row 2/);
+  });
+});
