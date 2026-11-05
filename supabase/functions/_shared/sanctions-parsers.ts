@@ -45,6 +45,11 @@ export function csvRows(input: string): string[][] {
 function ofacCsv(source: SanctionsSource, input: string): SanctionsEntry[] {
   const rows = csvRows(input.replace(/^\uFEFF/, ""));
   const data = rows[0] && normalize(rows[0][0] ?? "") === "entnum" ? rows.slice(1) : rows;
+  // OFAC CSV exports can end with a standalone -0- sentinel, not a designation.
+  // Only ignore this exact terminal marker; malformed records elsewhere still fail.
+  if (data.length && data[data.length - 1].length === 1 && data[data.length - 1][0].trim() === "-0-") {
+    data.pop();
+  }
   if (!data.length) throw new Error("OFAC CSV is empty");
   return data.map((row, index) => {
     // SDN.CSV and CONS_PRIM.CSV: ent_num, name, sdn_type, program, ...
