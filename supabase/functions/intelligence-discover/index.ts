@@ -1,3 +1,5 @@
+import { extractResponseText } from "../_shared/openai-response.ts";
+import { validateIntelligenceDraft } from "../_shared/intelligence-draft.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { parsePublicationFeed } from "../_shared/xml-feeds.ts";
 
@@ -24,17 +26,8 @@ async function draftWithAI(title: string, publisher: string, url: string, publis
   });
   if (!response.ok) throw new Error(`AI draft request failed: HTTP ${response.status}`);
   const payload = await response.json();
-  const raw = payload.output_text;
-  if (typeof raw !== "string") throw new Error("AI response did not contain structured output");
-  const draft = JSON.parse(raw);
-  const contentTypes = ["sanctions_development","case_law","enforcement_action","guidance","legislation","circumvention"];
-  const legalStatuses = ["final_judgment","interim","ag_opinion","settlement","penalty_notice","conviction","allegation","in_force","announced","not_applicable"];
-  if (!contentTypes.includes(draft.content_type) || !legalStatuses.includes(draft.legal_status) ||
-      typeof draft.headline !== "string" || typeof draft.executive_summary !== "string" ||
-      typeof draft.source_facts !== "string" || typeof draft.practical_implications !== "string") {
-    throw new Error("AI draft failed schema validation");
-  }
-  return draft;
+  const raw = extractResponseText(payload);
+  return validateIntelligenceDraft(JSON.parse(raw));
 }
 
 Deno.serve(async (req) => {
@@ -49,7 +42,7 @@ Deno.serve(async (req) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const xml = await response.text();
       const items = parsePublicationFeed(xml);
-      let discovered = 0, drafted = 0;
+      let discovered = 0, drafted = 0, draftFailures = 0;
       for (const item of items.slice(0, 30)) {
         if (!item.title || !item.url || !/^https:\/\//i.test(item.url)) continue;
         const publishedAt = item.date && !Number.isNaN(Date.parse(item.date)) ? new Date(item.date).toISOString() : null;
@@ -59,7 +52,11 @@ Deno.serve(async (req) => {
           .select("id,status,content_hash").eq("source_url", item.url).maybeSingle();
         if (lookupError) throw lookupError;
         if (existing && (existing.status !== "pending_review" || existing.content_hash === contentHash)) continue;
-        const aiDraft = await draftWithAI(item.title, source.name, item.url, publishedAt, extractedText).catch(() => null);
+        const aiDraft = await draftWithAI(item.title, source.name, item.url, publishedAt, extractedText).catch((error) => {
+          draftFailures++;
+          console.error("AI draft failed for source", source.code, ":", error instanceof Error ? error.message : String(error));
+          return null;
+        });
         const values = {
           source_code: source.code, source_url: item.url, source_title: item.title,
           source_publisher: source.name, published_at: publishedAt, content_hash: contentHash,
@@ -75,7 +72,7 @@ Deno.serve(async (req) => {
         discovered++;
         if (aiDraft) drafted++;
       }
-      results.push({ source: source.code, status: "succeeded", discovered, drafted });
+      results.push({ source: source.code, status: draftFailures ? "partial" : "succeeded", discovered, drafted, draft_failures: draftFailures });
     } catch (error) {
       results.push({ source: source.code, status: "failed", error: error instanceof Error ? error.message : String(error) });
     }
