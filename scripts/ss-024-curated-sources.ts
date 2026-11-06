@@ -28,6 +28,12 @@ const verified: Record<string, [string, string, string]> = {
   "eu|Tunisia": ["https://eur-lex.europa.eu/eli/reg/2011/101/oj/eng","EUR-Lex — Regulation 2011/101; consult amendments","eurlex_verified_original_act"],
   "eu|Yemen": ["https://eur-lex.europa.eu/eli/reg/2014/1352/oj/eng","EUR-Lex — Regulation 2014/1352; consult amendments","eurlex_verified_original_act"],
   "eu|Zimbabwe": ["https://eur-lex.europa.eu/eli/reg/2004/314/oj/eng","EUR-Lex — Regulation 2004/314; consult amendments","eurlex_verified_original_act"],
+  // Current UK domestic counter-terrorism legal framework (2019; repeals historical 2010 basis).
+  "uk|Domestic counter-terrorism": ["https://www.legislation.gov.uk/uksi/2019/577/contents","UK — Domestic counter-terrorism sanctions regulations (2019)","uk_legislation_current"],
+  // OFAC historical/status and live list sources. Avoid presenting revoked Syria measures as active.
+  "us|Syria": ["https://ofac.treasury.gov/recent-actions/20250630","OFAC — Syria sanctions programme revoked effective 1 July 2025","ofac_termination_notice"],
+  "us|Foreign sanctions evaders": ["https://ofac.treasury.gov/other-ofac-sanctions-lists","OFAC — Foreign Sanctions Evaders list (currently empty)","ofac_fse_current_list"],
+
   // US: OFAC active programme index.
   "us|Cuba": ["https://ofac.treasury.gov/sanctions-programs-and-country-information/cuba-sanctions","OFAC — Cuba sanctions","ofac_index"],
   "us|Iran": ["https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions","OFAC — Iran sanctions","ofac_index"],
