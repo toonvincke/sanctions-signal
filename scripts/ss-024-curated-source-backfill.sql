@@ -94,7 +94,10 @@ WITH sources(jurisdiction,slug,url,label,provenance,state) AS (VALUES
 ('eu','terrorism-cp-931-list','https://eur-lex.europa.eu/eli/reg/2001/2580/oj/eng','EUR-Lex — Regulation 2001/2580 (original act; check amendments)','eurlex_verified_original_act','mapped'),
 ('eu','tunisia','https://eur-lex.europa.eu/eli/reg/2011/101/oj/eng','EUR-Lex — Regulation 2011/101 (original act; check amendments)','eurlex_verified_original_act','mapped'),
 ('eu','yemen','https://eur-lex.europa.eu/eli/reg/2014/1352/oj/eng','EUR-Lex — Regulation 2014/1352 (original act; check amendments)','eurlex_verified_original_act','mapped'),
-('eu','zimbabwe','https://eur-lex.europa.eu/eli/reg/2004/314/oj/eng','EUR-Lex — Regulation 2004/314 (original act; check amendments)','eurlex_verified_original_act','mapped')
+('eu','zimbabwe','https://eur-lex.europa.eu/eli/reg/2004/314/oj/eng','EUR-Lex — Regulation 2004/314 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('uk','domestic-counter-terrorism','https://www.legislation.gov.uk/uksi/2019/577/contents','UK — Domestic counter-terrorism sanctions regulations (2019)','uk_legislation_current','mapped'),
+('us','syria','https://ofac.treasury.gov/recent-actions/20250630','OFAC — Syria sanctions programme revoked effective 1 July 2025','ofac_termination_notice','mapped'),
+('us','foreign-sanctions-evaders','https://ofac.treasury.gov/other-ofac-sanctions-lists','OFAC — Foreign Sanctions Evaders list (currently empty)','ofac_fse_current_list','mapped')
 )
 UPDATE public.sanctions_programmes p
 SET official_programme_url=s.url,official_programme_label=s.label,official_programme_source=s.provenance,source_mapping_status=s.state,updated_at=now()
