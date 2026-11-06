@@ -119,7 +119,7 @@ function EditorialQueue() {
               className={"w-full border p-3 text-left text-sm hover:border-brand " + (selected === item.id ? "border-brand" : "")}>
               <strong className="block">{item.source_title}</strong>
               <span className="mt-1 block text-xs text-muted-foreground">{item.source_publisher ?? "Publisher unknown"}</span>
-              {!item.ai_draft && <span className="block text-xs text-warning">No AI draft available</span>}
+              {!item.ai_draft && <span className="block text-xs text-warning">No AI draft available — provide a complete reviewed JSON draft below</span>}
             </button>
           </li>)}
         </ul>
@@ -154,7 +154,7 @@ function EditorialQueue() {
               rows={3} className="mt-2 w-full rounded-sm border bg-background p-3 text-sm" />
             <div className="mt-5 flex flex-wrap gap-3">
               {active.status === "pending_review" && <>
-                <button disabled={busy || !active.ai_draft} onClick={() => void decide("approve")}
+                <button disabled={busy} onClick={() => void decide("approve")}
                   className="bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50">Approve and publish</button>
                 <button disabled={busy} onClick={() => void decide("reject")}
                   className="border px-4 py-2 text-sm disabled:opacity-50">Reject</button>
