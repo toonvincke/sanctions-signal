@@ -37,8 +37,10 @@ export const VERIFICATION_LABELS: Record<Verification, string> = {
 export const RECORD_SELECT =
   "*, jurisdiction:jurisdictions(code,name), regime:regimes(slug,name), authority:authorities(slug,name,short_name), record_categories(category:categories(slug,name))";
 
+// Public list views must NEVER query full intelligence_records. Approved headline-only
+// previews are published into a separate table by the database trigger.
 const LIST_SELECT =
-  "id,slug,content_type,headline,executive_summary,publication_date,effective_date,penalty_amount,penalty_currency,legal_status,verification_status,priority,case_number, jurisdiction:jurisdictions(code,name), regime:regimes(slug,name), authority:authorities(slug,short_name)";
+  "record_id,slug,content_type,headline,publication_date,jurisdiction:jurisdictions(code,name), regime:regimes(slug,name), authority:authorities(slug,short_name)";
 
 export type ExplorerFilters = {
   q?: string | undefined;
@@ -85,12 +87,15 @@ export const facetsQuery = queryOptions({
 
 export const recordsQuery = (f: ExplorerFilters) =>
   queryOptions({
-    queryKey: ["records", f],
+    queryKey: ["public-intelligence-previews", f],
     queryFn: async () => {
       const facets = await facetsQuery.queryFn!({} as never);
-      const sel = f.category ? LIST_SELECT + ", record_categories!inner(category_id)" : LIST_SELECT;
-      let q = supabase.from("intelligence_records").select(sel).order("publication_date", { ascending: false });
-      if (f.q) q = q.textSearch("search", f.q, { type: "websearch", config: "english" });
+      // Category relationships are not published into public headlines.
+      // Never silently fall back to the protected records table.
+      if (f.category) return [] as ListRecord[];
+      let q = supabase.from("intelligence_previews" as never)
+        .select(LIST_SELECT).order("publication_date", { ascending: false });
+      if (f.q) q = q.ilike("headline", `%${f.q.replace(/[%_]/g, "")}%`);
       if (f.type) q = q.eq("content_type", f.type);
       const jid = facets.jurisdictions.find((x) => x.code === f.jurisdiction)?.id;
       if (f.jurisdiction && jid) q = q.eq("jurisdiction_id", jid);
@@ -98,11 +103,24 @@ export const recordsQuery = (f: ExplorerFilters) =>
       if (f.regime && rid) q = q.eq("regime_id", rid);
       const aid = facets.authorities.find((x) => x.slug === f.authority)?.id;
       if (f.authority && aid) q = q.eq("authority_id", aid);
-      const cid = facets.categories.find((x) => x.slug === f.category)?.id;
-      if (f.category && cid) q = q.eq("record_categories.category_id", cid);
       const { data, error } = await q;
       if (error) throw error;
-      return data as unknown as ListRecord[];
+      return (data ?? []).map((record) => {
+        const row = record as unknown as {
+          record_id: string; slug: string; content_type: ContentType; headline: string;
+          publication_date: string; jurisdiction: ListRecord["jurisdiction"];
+          regime: ListRecord["regime"]; authority: ListRecord["authority"];
+        };
+        return {
+          id: row.record_id, slug: row.slug, content_type: row.content_type,
+          headline: row.headline, publication_date: row.publication_date,
+          jurisdiction: row.jurisdiction, regime: row.regime, authority: row.authority,
+          executive_summary: "", effective_date: null, penalty_amount: null,
+          penalty_currency: null, legal_status: "not_applicable" as LegalStatus,
+          verification_status: "verified" as Verification,
+          priority: false, case_number: null,
+        };
+      }) as ListRecord[];
     },
   });
 
