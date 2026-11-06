@@ -7,6 +7,28 @@ ALTER TABLE public.sanctions_programmes DROP CONSTRAINT IF EXISTS sanctions_prog
 ALTER TABLE public.sanctions_programmes ADD CONSTRAINT sanctions_programmes_source_mapping_status_check
  CHECK (source_mapping_status IN ('needs_mapping','mapped','link_broken','review_required'));
 
+-- A programme landing page is not a dated legal document. Keep it separate from
+-- official_documents (which requires publication dates and editorial validation).
+ALTER TABLE public.sanctions_programmes
+ ADD COLUMN IF NOT EXISTS official_programme_url text,
+ ADD COLUMN IF NOT EXISTS official_programme_label text,
+ ADD COLUMN IF NOT EXISTS official_programme_source text;
+ALTER TABLE public.sanctions_programmes DROP CONSTRAINT IF EXISTS official_programme_url_https;
+ALTER TABLE public.sanctions_programmes ADD CONSTRAINT official_programme_url_https
+ CHECK (official_programme_url IS NULL OR official_programme_url ~* '^https://[^[:space:]]+
+ALTER TABLE public.official_documents
+ ADD COLUMN IF NOT EXISTS link_check_status text NOT NULL DEFAULT 'unchecked',
+ ADD COLUMN IF NOT EXISTS link_check_error text;
+ALTER TABLE public.official_documents DROP CONSTRAINT IF EXISTS official_documents_link_check_status_check;
+ALTER TABLE public.official_documents ADD CONSTRAINT official_documents_link_check_status_check
+ CHECK (link_check_status IN ('unchecked','ok','redirected','broken','blocked'));
+CREATE INDEX IF NOT EXISTS official_documents_link_check_idx
+ ON public.official_documents(link_check_status,last_checked_at);
+);
+ALTER TABLE public.sanctions_programmes DROP CONSTRAINT IF EXISTS official_programme_mapping_consistency;
+ALTER TABLE public.sanctions_programmes ADD CONSTRAINT official_programme_mapping_consistency
+ CHECK (source_mapping_status <> 'mapped' OR (official_programme_url IS NOT NULL AND official_programme_label IS NOT NULL AND official_programme_source IS NOT NULL));
+
 -- Link monitoring is separate from document publication approval.
 ALTER TABLE public.official_documents
  ADD COLUMN IF NOT EXISTS link_check_status text NOT NULL DEFAULT 'unchecked',
