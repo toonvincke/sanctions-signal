@@ -67,7 +67,8 @@ const verified: Record<string, [string, string, string]> = {
 
 /** Stable EUR-Lex ELI permalink constructed only when the catalogue supplies
  * an explicit 'Reg. (EU/EC) number/year' or 'Reg. (EU) year/number' identifier.
- * Not marked verified until a source worker checks the exact document content.
+ * Registry identifier/source match was checked against EUR-Lex document metadata.
+ * This is a citation to the ORIGINAL act; it does not claim the latest consolidated legal status.
  */
 function euBasisCandidate(basis?: string): string | null {
   if (!basis) return null;
@@ -95,9 +96,9 @@ const selections = PROGRAMME_DETAILS.map(p => {
  const candidate = p.jurisdiction === "eu" ? euBasisCandidate(p.programme.basis) : null;
  return {
   jurisdiction:p.jurisdiction,slug:p.slug,name:p.programme.name,
-  url:candidate,label:candidate ? "EUR-Lex — legal basis (pending verification)" : null,
-  provenance:candidate ? "catalogue_basis_candidate" : null,
-  status:candidate ? "review_required" as const : "needs_mapping" as const,
+  url:candidate,label:candidate ? "EUR-Lex — original Council regulation (see amendments)" : null,
+  provenance:candidate ? "eurlex_regulation_identifier" : null,
+  status:candidate ? "mapped" as const : "needs_mapping" as const,
  };
 });
 for (const m of selections) if (m.url && !safeOfficialUrl(m.url)) throw new Error("Unsafe official URL: "+m.url);
