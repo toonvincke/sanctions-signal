@@ -6,7 +6,9 @@ on:
       - "supabase/functions/sanctions-sync/**"
       - "supabase/functions/intelligence-discover/**"
       - "supabase/functions/candidate-review/**"
+      - "supabase/functions/official-source-check/**"
       - "drizzle/migrations/0023*"
+      - "drizzle/migrations/0024*"
       - "scripts/ss-023-staging-smoke.sql"
       - "supabase/functions/assistant/**"
       - "drizzle/migrations/0006*"
@@ -78,7 +80,7 @@ jobs:
       - name: Run OpenAI parsing, validation and mocked HTTP integration tests
         run: deno test --node-modules-dir=auto supabase/functions/_shared/openai-response.test.ts supabase/functions/_shared/intelligence-draft.test.ts supabase/functions/_shared/openai-client.test.ts
       - name: Type-check changed Edge Functions
-        run: deno check --node-modules-dir=auto supabase/functions/assistant/index.ts supabase/functions/intelligence-discover/index.ts supabase/functions/candidate-review/index.ts
+        run: deno check --node-modules-dir=auto supabase/functions/assistant/index.ts supabase/functions/intelligence-discover/index.ts supabase/functions/candidate-review/index.ts supabase/functions/official-source-check/index.ts
 
   premium-rls-tests:
     runs-on: ubuntu-latest
@@ -102,3 +104,26 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d postgres -f tests/sql/ss025_paywall_rls.sql
+
+  publication-integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Verify SS-023/SS-024 migrations, editorial state transitions and RLS
+        env:
+          PGPASSWORD: postgres
+        run: psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d postgres -f tests/sql/ss018_publication_integration.sql

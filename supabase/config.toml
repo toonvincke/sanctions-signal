@@ -9,3 +9,7 @@ verify_jwt = false
 
 [functions.intelligence-discover]
 verify_jwt = false
+
+# Dedicated cron-bearer authentication is enforced inside this endpoint.
+[functions.official-source-check]
+verify_jwt = false

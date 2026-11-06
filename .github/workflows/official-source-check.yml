@@ -1,0 +1,50 @@
+name: SS-024 official source link verification
+
+# Manual activation only. Enable daily schedule AFTER the function has passed
+# staging runtime checks and the owner approves production activation.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Validate required secrets
+        env:
+          SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
+          SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
+        run: |
+          test -n "$SUPABASE_FUNCTIONS_URL" || { echo "::error::Missing SUPABASE_FUNCTIONS_URL"; exit 1; }
+          test -n "$SANCTIONS_CRON_SECRET" || { echo "::error::Missing SANCTIONS_CRON_SECRET"; exit 1; }
+
+      - name: Check curated programme reference links in bounded batches
+        env:
+          SUPABASE_FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
+          SANCTIONS_CRON_SECRET: ${{ secrets.SANCTIONS_CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          for offset in 0 25 50 75 100 125 150 175; do
+            curl --silent --show-error --fail-with-body --max-time 170 \
+              -X POST "${SUPABASE_FUNCTIONS_URL%/}/official-source-check" \
+              -H "Authorization: Bearer $SANCTIONS_CRON_SECRET" \
+              -H "Content-Type: application/json" \
+              --data "{\"offset\":$offset,\"batch_size\":25}" > /tmp/official-source-check.json
+            python3 - <<'PY'
+          import json,sys
+          payload=json.load(open('/tmp/official-source-check.json'))
+          if not isinstance(payload.get('checked'),int) or not isinstance(payload.get('statuses'),dict):
+              print('::error::Malformed link check response')
+              sys.exit(1)
+          print('Link checks:',payload['checked'],payload['statuses'])
+          if any(k=='error' for k in payload['statuses']):
+              print('::error::Link check encountered a backend error')
+              sys.exit(1)
+          PY
+            if ! python3 -c "import json; exit(not json.load(open('/tmp/official-source-check.json')).get('has_more',False))"; then
+              break
+            fi
+          done

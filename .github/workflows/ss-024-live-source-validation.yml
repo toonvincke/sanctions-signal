@@ -1,0 +1,36 @@
+name: SS-024 live official URL validation
+
+# Runs on PR branch without secrets. This is read-only and never deploys or
+# updates staging or production; reviewed mappings remain unverified if blocked.
+on:
+  pull_request:
+    paths:
+      - 'scripts/ss-024-curated-sources.ts'
+      - 'scripts/ss-024-verify-live-links.ts'
+      - 'scripts/ss-024-link-check.ts'
+      - 'supabase/functions/_shared/official-link-check.ts'
+      - '.github/workflows/ss-024-live-source-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Generate current source inventory
+        run: bun run scripts/ss-024-curated-sources.ts --json > /tmp/ss024-sources.json
+      - name: Check official URLs without modifying the database
+        run: bun run scripts/ss-024-verify-live-links.ts /tmp/ss024-sources.json
+      - name: Upload machine-readable reachability report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ss-024-official-url-reachability
+          path: ss-024-link-report.json
+          if-no-files-found: warn
