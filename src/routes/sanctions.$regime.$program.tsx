@@ -1,5 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteChrome";
+import { LockKeyhole } from "lucide-react";
+import { usePremiumAccess } from "@/hooks/use-premium-access";
 import { REGIMES } from "@/lib/sanctions-programs";
 import { getProgrammeDetail, OFFICIAL_LEGAL_PORTALS } from "@/lib/programme-detail";
 
@@ -84,31 +86,8 @@ function ProgrammePage() {
               </dl>
               <p className="mt-4 text-sm text-muted-foreground">This is a concise overview of information currently recorded in the programme catalogue, not a complete legal assessment.</p>
             </section>
-            <section id="legal-framework" className="scroll-mt-6">
-              <h2 className="mb-4 border-b pb-2 font-serif text-2xl">Legal framework</h2>
-              {programme.basis ? <p className="text-sm"><span className="font-medium">Referenced legal basis:</span> {programme.basis}</p> :
-                <EmptyState text="No programme-specific legal instrument is recorded yet." />}
-              <p className="mt-3 text-xs text-muted-foreground">The legal reference is catalogue information and has not been independently checked for completeness or current amendments.</p>
-              <a href={portal.url} rel="noopener noreferrer" target="_blank" className="mt-3 inline-block text-sm text-brand underline underline-offset-4">{portal.label} ↗</a>
-            </section>
-            <section id="restrictions" className="scroll-mt-6">
-              <h2 className="mb-4 border-b pb-2 font-serif text-2xl">Restrictions</h2>
-              {programme.scope ? <p className="text-sm">{programme.scope}</p> :
-                <EmptyState text="No measures have been recorded yet." />}
-              <p className="mt-3 text-xs text-muted-foreground">Summary only. Check the operative legal text, exceptions and amendments before relying on these measures.</p>
-            </section>
-            <section id="guidance" className="scroll-mt-6">
-              <h2 className="mb-4 border-b pb-2 font-serif text-2xl">Guidance / FAQs</h2>
-              <EmptyState text="No programme-specific guidance or FAQ has been verified and linked yet. Consult the official authority resources below." />
-            </section>
-            <section id="licensing" className="scroll-mt-6">
-              <h2 className="mb-4 border-b pb-2 font-serif text-2xl">Licensing / Exemptions</h2>
-              <EmptyState text="Programme-specific licences, derogations and exemptions have not yet been documented here. Consult the applicable legislation and competent authority." />
-            </section>
-            <section id="updates" className="scroll-mt-6">
-              <h2 className="mb-4 border-b pb-2 font-serif text-2xl">Latest Updates</h2>
-              <EmptyState text="No verified programme-specific updates have been linked yet." />
-            </section>
+            <PremiumProgrammeContent jurisdiction={jurisdiction} slug={slug} />
+
           </div>
           <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
             <div className="border bg-card p-5">
@@ -128,5 +107,50 @@ function ProgrammePage() {
         </div>
       </main>
     </SiteLayout>
+  );
+}
+
+/** Static catalogue scope and jurisdiction remain free, as on the public overview.
+ * All newly authored premium records live in a separate RLS-protected table.
+ */
+function PremiumProgrammeContent({ jurisdiction, slug }: { jurisdiction: string; slug: string }) {
+  const { state, sections: premiumSections, isPremium } = usePremiumAccess(jurisdiction, slug);
+  return (
+    <>
+      {!isPremium && (
+        <div role="region" aria-label="Premium access" className="border-2 border-brand bg-card p-6 sm:p-8">
+          <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-brand"><LockKeyhole className="h-4 w-4" /> Premium programme research</div>
+          <h2 className="mt-4 font-serif text-2xl">Unlock detailed sanctions intelligence</h2>
+          <p className="mt-3 max-w-xl text-sm text-muted-foreground">
+            Explore structured legal instruments, guidance, licensing information and programme-specific developments as they are published.
+          </p>
+          {state === "unavailable" && <p role="status" className="mt-3 text-sm text-warning">Subscription verification is temporarily unavailable. Premium content remains protected.</p>}
+          {state === "loading" && <p role="status" className="mt-3 text-sm text-muted-foreground">Checking subscription access…</p>}
+          <div className="mt-6 flex flex-wrap items-center gap-4">
+            <Link to="/pricing" className="bg-primary px-5 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90">View Premium plans</Link>
+            {state === "anonymous" && <Link to="/auth" search={{ mode: "signin" }} className="text-sm text-brand underline underline-offset-4">Already subscribed? Sign in</Link>}
+          </div>
+        </div>
+      )}
+      {sections.filter(([id]) => id !== "overview").map(([id, label]) => {
+        const entries = isPremium ? premiumSections.filter((entry) => entry.section_key === id) : [];
+        return (
+          <section key={id} id={id} className="scroll-mt-6">
+            <h2 className="mb-4 flex items-center gap-2 border-b pb-2 font-serif text-2xl">
+              {label}{!isPremium && <LockKeyhole className="h-4 w-4 text-muted-foreground" aria-label="Premium section" />}
+            </h2>
+            {!isPremium ? (
+              <p className="border border-dashed bg-secondary/40 px-4 py-5 text-sm text-muted-foreground">This section is available with Premium. <Link to="/pricing" className="text-brand underline">See plans</Link>.</p>
+            ) : entries.length ? entries.map((entry) => (
+              <article key={`${entry.section_key}:${entry.title}`} className="mb-4 border bg-card p-5">
+                <h3 className="font-medium">{entry.title}</h3>
+                <p className="mt-3 whitespace-pre-line text-sm">{entry.body}</p>
+                {entry.source_url && <a href={entry.source_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm text-brand underline">Original source ↗</a>}
+              </article>
+            )) : <EmptyState text="No reviewed programme-specific items have been published in this section yet." />}
+          </section>
+        );
+      })}
+    </>
   );
 }
