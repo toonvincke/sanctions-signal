@@ -20,4 +20,38 @@ describe("SS-024 official source probes", () => {
   expect(r.status).toBe("ok");
   expect(r.http_status).toBe(200);
  });
+ it("marks only definite 404/410 as broken, not temporary server errors", async () => {
+  const url = "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions";
+  for (const code of [404, 410]) {
+   const mock=(async () => new Response(null,{status:code})) as typeof fetch;
+   expect((await probeOfficialLink(url,mock)).status).toBe("broken");
+  }
+  for (const code of [500, 502, 503]) {
+   const mock=(async () => new Response(null,{status:code})) as typeof fetch;
+   expect((await probeOfficialLink(url,mock)).status).toBe("unavailable");
+  }
+ });
+ it("treats rate limits and anti-bot blocks as inconclusive rather than broken", async () => {
+  const url = "https://ofac.treasury.gov/sanctions-programs-and-country-information";
+  for (const code of [401, 403, 429]) {
+    const mock=(async () => new Response(null,{status:code})) as typeof fetch;
+    expect((await probeOfficialLink(url,mock)).status).toBe("blocked");
+  }
+ });
+ it("does not turn connection errors into invalid-source decisions", async () => {
+   const mock=(async () => { throw new Error("Timeout"); }) as typeof fetch;
+   expect((await probeOfficialLink("https://www.gov.uk/government/publications/the-uk-sanctions-list",mock)).status).toBe("unavailable");
+ });
+ it("follows redirects only to approved official domains", async () => {
+   const mock=(async (input: RequestInfo | URL) => {
+     const url = String(input);
+     return url.includes("ofac.treasury.gov") ?
+       new Response(null,{status:301,headers:{location:"https://www.gov.uk/government/publications/the-uk-sanctions-list"}})
+       : new Response(null,{status:200});
+   }) as typeof fetch;
+   const r=await probeOfficialLink("https://ofac.treasury.gov/sanctions-programs-and-country-information",mock);
+   expect(r.status).toBe("redirected");
+   expect(r.redirect).toContain("gov.uk");
+ });
+
 });
