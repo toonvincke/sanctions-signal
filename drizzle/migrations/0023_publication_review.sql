@@ -95,6 +95,11 @@ BEGIN
  IF p_actor IS NULL OR p_decision NOT IN ('approve','reject','correct','withdraw') THEN
   RAISE EXCEPTION 'Invalid decision or reviewer';
  END IF;
+ -- Re-check the actor inside the transaction to prevent a role-revocation race.
+ IF NOT EXISTS (SELECT 1 FROM public.user_roles
+   WHERE user_id=p_actor AND role='admin'::public.app_role) THEN
+  RAISE EXCEPTION 'Reviewer is not an administrator';
+ END IF;
  SELECT * INTO c FROM public.intelligence_candidates WHERE id=p_candidate_id FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'Candidate not found'; END IF;
  IF p_decision IN ('approve','reject') AND c.status <> 'pending_review' THEN
@@ -212,6 +217,7 @@ BEGIN
   publication_state='published',validated_at=now(),published_at=coalesce(public.official_documents.published_at,now()),
   updated_at=now()
  WHERE public.official_documents.withdrawn_at IS NULL
+  AND public.official_documents.publication_state <> 'withdrawn'
  RETURNING id INTO v_id;
  IF v_id IS NULL THEN RAISE EXCEPTION 'Withdrawn source cannot be republished automatically'; END IF;
  INSERT INTO public.programme_documents(programme_id,document_id)
