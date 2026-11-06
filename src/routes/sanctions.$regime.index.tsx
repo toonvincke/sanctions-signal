@@ -7,8 +7,8 @@ import { programmeSlug } from "@/lib/programme-detail";
 const regimeRoute = getRouteApi("/sanctions/$regime");
 
 export const Route = createFileRoute("/sanctions/$regime/")({
-  head: ({ params }) => {
-    const r = (REGIMES as Record<string, (typeof REGIMES)[keyof typeof REGIMES]>)[params.regime];
+  head: ({ loaderData }) => {
+    const r = loaderData ? REGIMES[loaderData.slug] : undefined;
     if (!r) return { meta: [{ title: "Sanctions programmes — Lexsanction" }] };
     const title = `${r.label} — programme overview | Lexsanction`;
     const description = `Overview of ${r.title.toLowerCase()}: legal basis, scope and responsible authorities, with links to the official lists.`;

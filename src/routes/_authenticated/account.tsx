@@ -8,6 +8,8 @@ import { friendlyAuthError } from "@/lib/auth-errors";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { usePremiumAccess } from "@/hooks/use-premium-access";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
@@ -65,6 +67,7 @@ function AccountPage() {
   }
 
   const isAdmin = data.roles.includes("admin");
+  const { state: premiumState } = usePremiumAccess("eu", "account-status-only", false);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
@@ -80,7 +83,7 @@ function AccountPage() {
           <dd>{data.profile ? new Date(data.profile.created_at).toLocaleDateString("en-GB", { dateStyle: "long" }) : "—"}</dd>
           <dt className="text-muted-foreground">Access level</dt>
           <dd>
-            <span className="border px-2 py-0.5 font-mono text-xs uppercase tracking-wider">{isAdmin ? "Administrator" : "Subscriber"}</span>
+            <span className="border px-2 py-0.5 font-mono text-xs uppercase tracking-wider">{isAdmin ? "Administrator" : premiumState === "premium" ? "Premium" : premiumState === "loading" ? "Checking…" : premiumState === "unavailable" ? "Unavailable" : "Free"}</span>
           </dd>
         </dl>
         <form onSubmit={saveProfile} className="mt-6 flex items-end gap-3">
@@ -92,6 +95,12 @@ function AccountPage() {
             {saving ? "Saving…" : "Save"}
           </Button>
         </form>
+      </section>
+
+      <section className="mt-6 border bg-card p-6">
+        <h2 className="text-lg">Subscription</h2>
+        <p className="mt-2 text-sm text-muted-foreground">Premium checkout and billing management are not yet available.</p>
+        <Link to="/pricing" className="mt-3 inline-block text-sm text-brand underline">View subscription plans</Link>
       </section>
 
       <section className="mt-6 border bg-card p-6">
