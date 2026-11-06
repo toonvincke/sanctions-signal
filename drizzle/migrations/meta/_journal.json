@@ -92,6 +92,13 @@
       "when": 1793970000000,
       "tag": "0012_programme_document_model",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793988100000,
+      "tag": "0023_publication_review",
+      "breakpoints": true
     }
   ]
 }
