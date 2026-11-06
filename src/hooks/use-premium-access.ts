@@ -17,7 +17,7 @@ type AccessState = "loading" | "anonymous" | "free" | "premium" | "admin" | "una
  * UI state only. The actual premium document access is enforced independently
  * by PostgreSQL RLS in migration 0008; this hook must never grant DB access.
  */
-export function usePremiumAccess(jurisdiction: string, slug: string) {
+export function usePremiumAccess(jurisdiction: string, slug: string, loadSections = true) {
   const { session, loading } = useSession();
   const userId = session?.user.id;
   const [state, setState] = useState<AccessState>("loading");
@@ -42,6 +42,8 @@ export function usePremiumAccess(jurisdiction: string, slug: string) {
         const entitled = admin || hasPremiumAccess(sub?.status ?? null, sub?.current_period_end ?? null);
         if (!entitled) { setState("free"); return; }
 
+        if (!loadSections) { setState(admin ? "admin" : "premium"); return; }
+
         // The SELECT policy applies the same entitlement/role checks server-side.
         // An attacker cannot bypass RLS by invoking this query directly.
         const { data, error } = await supabase.from("programme_premium_sections" as never)
@@ -61,7 +63,7 @@ export function usePremiumAccess(jurisdiction: string, slug: string) {
     }
     void load();
     return () => { cancelled = true; };
-  }, [userId, loading, jurisdiction, slug]);
+  }, [userId, loading, jurisdiction, slug, loadSections]);
 
   return { state, sections, isPremium: state === "premium" || state === "admin" };
 }
