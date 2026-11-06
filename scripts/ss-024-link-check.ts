@@ -1,8 +1,7 @@
 /**
  * SS-024: a deliberately read-only official-link probe.
- * Run with: bun scripts/ss-024-check-links.ts < inventory.json
- * Input: JSON array of {programme, url} or {programmes:[{jurisdiction,slug,verified_programme_url}]}.
- * This tool does not change publication status or auto-approve a citation.
+ * Import probeOfficialLink from a controlled runner; do not probe untrusted input.
+ * This module does not change publication status or auto-approve a citation.
  */
 const ALLOWED = ["eur-lex.europa.eu","consilium.europa.eu","ec.europa.eu","ofac.treasury.gov",
  "treasury.gov","gov.uk","legislation.gov.uk","main.un.org","un.org","bis.gov","justice.gov"];
