@@ -5,6 +5,7 @@ CREATE TABLE public.user_subscriptions (
   plan text NOT NULL CHECK (plan IN ('premium_monthly', 'premium_annual', 'team')),
   status text NOT NULL CHECK (status IN ('active','trialing','past_due','canceled','expired')),
   current_period_end timestamptz NOT NULL,
+  cancel_at_period_end boolean NOT NULL DEFAULT false,
   provider_customer_id text,
   provider_subscription_id text UNIQUE,
   created_at timestamptz NOT NULL DEFAULT now(),
