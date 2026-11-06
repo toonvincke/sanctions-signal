@@ -1,6 +1,7 @@
 import { requestIntelligenceDraft } from "../_shared/openai-client.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { parsePublicationFeed } from "../_shared/xml-feeds.ts";
+import { validateOfficialSource, type OfficialSourceInput } from "../_shared/official-publication.ts";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 const CRON_SECRET = Deno.env.get("SANCTIONS_CRON_SECRET")!;
@@ -27,6 +28,9 @@ Deno.serve(async (req) => {
   if (!CRON_SECRET || req.headers.get("authorization") !== `Bearer ${CRON_SECRET}`) return new Response("Unauthorized", { status: 401 });
   const { data: sources, error } = await db.from("sanctions_sources").select("code,name,source_url").eq("enabled", true).eq("source_type", "rss");
   if (error) return Response.json({ error: error.message }, { status: 500 });
+  const { data: rules, error: rulesError } = await db.from("official_document_source_rules")
+    .select("id,source_code,url_prefix,document_type,programme_id").eq("enabled", true);
+  if (rulesError) return Response.json({ error: "Official source rules unavailable" }, { status: 500 });
   const results = [];
   for (const source of sources ?? []) {
     try {
@@ -34,10 +38,29 @@ Deno.serve(async (req) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const xml = await response.text();
       const items = parsePublicationFeed(xml);
-      let discovered = 0, drafted = 0, draftFailures = 0;
+      let discovered = 0, drafted = 0, draftFailures = 0, officialPublished = 0, sourceFailures = 0;
       for (const item of items.slice(0, 30)) {
         if (!item.title || !item.url || !/^https:\/\//i.test(item.url)) continue;
         const publishedAt = item.date && !Number.isNaN(Date.parse(item.date)) ? new Date(item.date).toISOString() : null;
+        // Publish only technical official metadata for explicitly mapped programme feeds.
+        // Unreviewed AI content remains a private candidate regardless of this result.
+        for (const rule of (rules ?? []).filter((r) =>
+          r.source_code === source.code && item.url.startsWith(r.url_prefix))) {
+          const metadata: OfficialSourceInput = {
+            url: item.url, publisher: source.name, title: item.title,
+            sourceType: rule.document_type as OfficialSourceInput["sourceType"],
+            sourceDate: publishedAt?.slice(0, 10) ?? "", programmeSlug: rule.programme_id,
+          };
+          if (!validateOfficialSource(metadata)) continue;
+          const { error: publishError } = await db.rpc("publish_official_document", {
+            p_rule_id: rule.id, p_url: item.url, p_title: item.title,
+            p_issuer: source.name, p_date: metadata.sourceDate,
+          });
+          if (publishError) {
+            sourceFailures++;
+            console.error("Official metadata publish failed:", source.code, publishError.code);
+          } else officialPublished++;
+        }
         const extractedText = item.description.slice(0, 20000);
         const contentHash = await sha([item.title, extractedText].join("\n"));
         const { data: existing, error: lookupError } = await db.from("intelligence_candidates")
@@ -65,7 +88,7 @@ Deno.serve(async (req) => {
         discovered++;
         if (aiDraft) drafted++;
       }
-      results.push({ source: source.code, status: draftFailures ? "partial" : "succeeded", discovered, drafted, draft_failures: draftFailures });
+      results.push({ source: source.code, status: draftFailures || sourceFailures ? "partial" : "succeeded", discovered, drafted, official_published: officialPublished, draft_failures: draftFailures, official_failures: sourceFailures });
     } catch (error) {
       results.push({ source: source.code, status: "failed", error: error instanceof Error ? error.message : String(error) });
     }
