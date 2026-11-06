@@ -13,6 +13,21 @@ Deno.serve(async (req) => {
   if (!token || token === auth) return new Response("Unauthorized", { status: 401 });
   const { data: { user }, error: userError } = await admin.auth.getUser(token);
   if (userError || !user) return new Response("Unauthorized", { status: 401 });
+  // Service-role queries bypass RLS. Enforce paid/admin eligibility BEFORE retrieval
+  // and before any OpenAI request, using trusted database rows rather than JWT user metadata.
+  const [{ data: subscription, error: subscriptionError }, { data: roles, error: rolesError }] = await Promise.all([
+    admin.from("user_subscriptions").select("status,current_period_end").eq("user_id", user.id).maybeSingle(),
+    admin.from("user_roles").select("role").eq("user_id", user.id),
+  ]);
+  if (subscriptionError || rolesError) {
+    console.error("[Assistant] Unable to verify access rights");
+    return Response.json({ error: "Unable to verify subscription access." }, { status: 503 });
+  }
+  const isAdmin = (roles ?? []).some((role) => role.role === "admin");
+  const validPeriod = subscription?.current_period_end && new Date(subscription.current_period_end).getTime() > Date.now();
+  const paid = (subscription?.status === "active" || subscription?.status === "trialing") && Boolean(validPeriod);
+  if (!isAdmin && !paid) return Response.json({ error: "Premium subscription required." }, { status: 403 });
+
   if (!openAiKey) return Response.json({ error: "AI assistant is not configured. Add OPENAI_API_KEY to Supabase function secrets." }, { status: 503 });
 
   const body = await req.json().catch(() => ({}));
