@@ -1,4 +1,4 @@
--- SS-024 generated from curated official UK, US and UN source indexes; EU ELI candidates withheld from publication.
+-- SS-024 generated from curated official UK, US and UN source indexes; EU legal acts linked to official originals; no current consolidation claim.
 -- Safe to replay; does not overwrite independently changed curator mapping URLs.
 WITH sources(jurisdiction,slug,url,label,provenance,state) AS (VALUES
 ('us','cuba','https://ofac.treasury.gov/sanctions-programs-and-country-information/cuba-sanctions','OFAC — Cuba sanctions','ofac_index','mapped'),
@@ -75,11 +75,30 @@ WITH sources(jurisdiction,slug,url,label,provenance,state) AS (VALUES
 ('eu','chemical-weapons','https://eur-lex.europa.eu/eli/reg/2018/1542/oj/eng','EUR-Lex — Regulation 2018/1542 (original act; see latest amendments)','eurlex_regulation_identifier','mapped'),
 ('eu','isil-da-esh-and-al-qaida-un-listings','https://eur-lex.europa.eu/eli/reg/2002/881/oj/eng','EUR-Lex — Regulation 2002/881 (original act; see latest amendments)','eurlex_regulation_identifier','mapped'),
 ('eu','isil-da-esh-and-al-qaida-autonomous','https://eur-lex.europa.eu/eli/reg/2016/1686/oj/eng','EUR-Lex — Regulation 2016/1686 (original act; see latest amendments)','eurlex_regulation_identifier','mapped'),
-('eu','hamas-and-palestinian-islamic-jihad','https://eur-lex.europa.eu/eli/reg/2024/386/oj/eng','EUR-Lex — Regulation 2024/386 (original act; see latest amendments)','eurlex_regulation_identifier','mapped')
+('eu','hamas-and-palestinian-islamic-jihad','https://eur-lex.europa.eu/eli/reg/2024/386/oj/eng','EUR-Lex — Regulation 2024/386 (original act; see latest amendments)','eurlex_regulation_identifier','mapped'),
+('eu','bosnia-and-herzegovina','https://eur-lex.europa.eu/eli/dec/2011/173/oj/eng','EUR-Lex — Council Decision 2011/173 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','central-african-republic','https://eur-lex.europa.eu/eli/reg/2014/224/oj/eng','EUR-Lex — Regulation 2014/224 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','democratic-republic-of-the-congo','https://eur-lex.europa.eu/eli/reg/2005/1183/oj/eng','EUR-Lex — Regulation 2005/1183 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','guatemala','https://eur-lex.europa.eu/eli/reg/2024/287/oj/eng','EUR-Lex — Regulation 2024/287 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','guinea','https://eur-lex.europa.eu/eli/reg/2009/1284/oj/eng','EUR-Lex — Regulation 2009/1284 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','guinea-bissau','https://eur-lex.europa.eu/eli/reg/2012/377/oj/eng','EUR-Lex — Regulation 2012/377 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','haiti','https://eur-lex.europa.eu/eli/reg/2022/2309/oj/eng','EUR-Lex — Regulation 2022/2309 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','lebanon','https://eur-lex.europa.eu/eli/reg/2021/1275/oj/eng','EUR-Lex — Regulation 2021/1275 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','mali','https://eur-lex.europa.eu/eli/reg/2017/1770/oj/eng','EUR-Lex — Regulation 2017/1770 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','moldova','https://eur-lex.europa.eu/eli/reg/2023/888/oj/eng','EUR-Lex — Regulation 2023/888 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','nicaragua','https://eur-lex.europa.eu/eli/reg/2019/1716/oj/eng','EUR-Lex — Regulation 2019/1716 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','russia-human-rights','https://eur-lex.europa.eu/eli/reg/2024/1485/oj/eng','EUR-Lex — Regulation 2024/1485 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','somalia','https://eur-lex.europa.eu/eli/reg/2010/356/oj/eng','EUR-Lex — Regulation 2010/356 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','south-sudan','https://eur-lex.europa.eu/eli/reg/2015/735/oj/eng','EUR-Lex — Regulation 2015/735 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','sudan','https://eur-lex.europa.eu/eli/reg/2014/747/oj/eng','EUR-Lex — Regulation 2014/747 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','terrorism-cp-931-list','https://eur-lex.europa.eu/eli/reg/2001/2580/oj/eng','EUR-Lex — Regulation 2001/2580 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','tunisia','https://eur-lex.europa.eu/eli/reg/2011/101/oj/eng','EUR-Lex — Regulation 2011/101 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','yemen','https://eur-lex.europa.eu/eli/reg/2014/1352/oj/eng','EUR-Lex — Regulation 2014/1352 (original act; check amendments)','eurlex_verified_original_act','mapped'),
+('eu','zimbabwe','https://eur-lex.europa.eu/eli/reg/2004/314/oj/eng','EUR-Lex — Regulation 2004/314 (original act; check amendments)','eurlex_verified_original_act','mapped')
 )
 UPDATE public.sanctions_programmes p
 SET official_programme_url=s.url,official_programme_label=s.label,official_programme_source=s.provenance,source_mapping_status=s.state,updated_at=now()
 FROM sources s
 WHERE p.jurisdiction=s.jurisdiction AND p.slug=s.slug
  AND (p.official_programme_url IS NULL OR p.official_programme_url=s.url)
- AND p.source_mapping_status IN ('needs_mapping','mapped','mapped');
+ AND p.source_mapping_status IN ('needs_mapping','mapped');
