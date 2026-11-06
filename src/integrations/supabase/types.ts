@@ -197,6 +197,77 @@ export type Database = {
           },
         ]
       }
+      intelligence_previews: {
+        Row: {
+          authority_id: string | null
+          content_type: Database["public"]["Enums"]["content_type"]
+          headline: string
+          jurisdiction_id: string | null
+          publication_date: string
+          record_id: string
+          regime_id: string | null
+          slug: string
+          source_publisher: string | null
+          source_url: string
+          updated_at: string
+        }
+        Insert: {
+          authority_id?: string | null
+          content_type: Database["public"]["Enums"]["content_type"]
+          headline: string
+          jurisdiction_id?: string | null
+          publication_date: string
+          record_id: string
+          regime_id?: string | null
+          slug: string
+          source_publisher?: string | null
+          source_url: string
+          updated_at?: string
+        }
+        Update: {
+          authority_id?: string | null
+          content_type?: Database["public"]["Enums"]["content_type"]
+          headline?: string
+          jurisdiction_id?: string | null
+          publication_date?: string
+          record_id?: string
+          regime_id?: string | null
+          slug?: string
+          source_publisher?: string | null
+          source_url?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_previews_authority_id_fkey"
+            columns: ["authority_id"]
+            isOneToOne: false
+            referencedRelation: "authorities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_previews_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_previews_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: true
+            referencedRelation: "intelligence_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_previews_regime_id_fkey"
+            columns: ["regime_id"]
+            isOneToOne: false
+            referencedRelation: "regimes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intelligence_record_versions: {
         Row: {
           change_reason: string | null
