@@ -1,6 +1,7 @@
+-- SQL is replay-safe for the already-created Lovable Cloud objects. Verify live schema before using elsewhere.
 -- SS-025: paid entitlement is separate from ordinary login and admin roles.
 -- Review the live Lovable Cloud schema before applying this migration.
-CREATE TABLE public.user_subscriptions (
+CREATE TABLE IF NOT EXISTS public.user_subscriptions (
   user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   plan text NOT NULL CHECK (plan IN ('premium_monthly', 'premium_annual', 'team')),
   status text NOT NULL CHECK (status IN ('active','trialing','past_due','canceled','expired')),
@@ -15,6 +16,7 @@ ALTER TABLE public.user_subscriptions ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.user_subscriptions FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.user_subscriptions TO authenticated;
 GRANT ALL ON public.user_subscriptions TO service_role;
+DROP POLICY IF EXISTS "subscription owner may read" ON public.user_subscriptions;
 CREATE POLICY "subscription owner may read" ON public.user_subscriptions
   FOR SELECT TO authenticated USING (user_id = auth.uid());
 -- No INSERT/UPDATE/DELETE for authenticated: checkout webhook/service role only.
@@ -35,7 +37,7 @@ REVOKE ALL ON FUNCTION private.has_premium_access(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION private.has_premium_access(uuid) TO authenticated, service_role;
 
 -- Only *new protected content* goes here; no paywalled content in public tables or JS bundles.
-CREATE TABLE public.programme_premium_sections (
+CREATE TABLE IF NOT EXISTS public.programme_premium_sections (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   jurisdiction text NOT NULL CHECK (jurisdiction IN ('eu','us','uk','un')),
   programme_slug text NOT NULL,
@@ -48,12 +50,13 @@ CREATE TABLE public.programme_premium_sections (
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (jurisdiction, programme_slug, section_key, title)
 );
-CREATE INDEX programme_premium_sections_lookup
+CREATE INDEX IF NOT EXISTS programme_premium_sections_lookup
   ON public.programme_premium_sections (jurisdiction, programme_slug, section_key);
 ALTER TABLE public.programme_premium_sections ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.programme_premium_sections FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.programme_premium_sections TO authenticated;
 GRANT ALL ON public.programme_premium_sections TO service_role;
+DROP POLICY IF EXISTS "published sections for active members or admin preview" ON public.programme_premium_sections;
 CREATE POLICY "published sections for active members or admin preview"
  ON public.programme_premium_sections FOR SELECT TO authenticated USING (
    private.has_role(auth.uid(), 'admin'::public.app_role)
