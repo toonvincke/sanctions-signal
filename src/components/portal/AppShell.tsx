@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouteContext } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import type { ReactNode } from "react";
-import { LayoutDashboard, Search, Bookmark, LogOut, Gavel, Scale, FileText, Globe2, UserRound } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { LayoutDashboard, Search, Bookmark, LogOut, Gavel, Scale, FileText, Globe2, UserRound, ClipboardCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const primary = [
@@ -22,6 +22,13 @@ const sections = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const qc = useQueryClient();
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void supabase.from("user_roles").select("id").eq("user_id", user.id).eq("role", "admin")
+      .maybeSingle().then(({ data, error }) => { if (active) setIsAdmin(!error && Boolean(data)); });
+    return () => { active = false; };
+  }, [user.id]);
   const navigate = useNavigate();
   async function signOut() {
     await qc.cancelQueries();
@@ -44,6 +51,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
+        {isAdmin && <nav className="mt-3 px-2">
+          <Link to="/editorial" className={linkCls} activeProps={{ className: "bg-sidebar-accent text-sidebar-accent-foreground" }}>
+            <ClipboardCheck className="h-4 w-4" /> Editorial review
+          </Link>
+        </nav>}
         <div className="mt-6 px-5 font-mono text-[10px] uppercase tracking-widest text-sidebar-foreground/50">Content</div>
         <nav className="mt-2 flex flex-col gap-0.5 px-2">
           {sections.map((s) => (
@@ -70,6 +82,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link to="/explorer">Explorer</Link>
             <Link to="/bookmarks">Saved</Link>
             <Link to="/account">Account</Link>
+            {isAdmin && <Link to="/editorial">Review</Link>}
           </div>
         </div>
         <main className="flex-1">{children}</main>
