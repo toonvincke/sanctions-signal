@@ -67,7 +67,7 @@ function AccountPage() {
   }
 
   const isAdmin = data.roles.includes("admin");
-  const { state: premiumState } = usePremiumAccess("eu", "account-status-only");
+  const { state: premiumState } = usePremiumAccess("eu", "account-status-only", false);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
