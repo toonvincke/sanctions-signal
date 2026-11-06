@@ -8,9 +8,11 @@ ALTER TABLE public.official_documents
  ADD COLUMN IF NOT EXISTS published_at timestamptz,
  ADD COLUMN IF NOT EXISTS withdrawn_at timestamptz,
  ADD COLUMN IF NOT EXISTS source_code text;
+ALTER TABLE public.official_documents DROP CONSTRAINT IF EXISTS official_document_publication_state_check;
 ALTER TABLE public.official_documents
  ADD CONSTRAINT official_document_publication_state_check
  CHECK (publication_state IN ('draft','published','withdrawn'));
+ALTER TABLE public.official_documents DROP CONSTRAINT IF EXISTS official_document_publish_requires_validation;
 ALTER TABLE public.official_documents
  ADD CONSTRAINT official_document_publish_requires_validation
  CHECK (publication_state <> 'published' OR
@@ -22,7 +24,7 @@ CREATE INDEX IF NOT EXISTS official_documents_publication_idx
 -- A curator must explicitly map a dedicated, official feed URL prefix to a programme.
 -- No rules are enabled by default: a generic authority-wide feed must never be
 -- mistaken for a specific sanctions programme.
-CREATE TABLE public.official_document_source_rules (
+CREATE TABLE IF NOT EXISTS public.official_document_source_rules (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  source_code text NOT NULL REFERENCES public.sanctions_sources(code),
  programme_id uuid NOT NULL REFERENCES public.sanctions_programmes(id) ON DELETE CASCADE,
@@ -41,12 +43,15 @@ GRANT ALL ON public.official_document_source_rules TO service_role;
 -- only for verified records. Do not loosen those policies.
 -- Explicitly protect source metadata and mapping rows from unreviewed publication.
 GRANT SELECT ON public.sanctions_programmes, public.official_documents, public.programme_documents TO anon, authenticated;
+DROP POLICY IF EXISTS "public catalogue programmes" ON public.sanctions_programmes;
 CREATE POLICY "public catalogue programmes" ON public.sanctions_programmes
  FOR SELECT TO anon, authenticated USING (true);
+DROP POLICY IF EXISTS "published validated official documents" ON public.official_documents;
 CREATE POLICY "published validated official documents" ON public.official_documents
  FOR SELECT TO anon, authenticated
  USING (publication_state = 'published' AND validated_at IS NOT NULL
  AND published_at IS NOT NULL AND withdrawn_at IS NULL);
+DROP POLICY IF EXISTS "links for published documents only" ON public.programme_documents;
 CREATE POLICY "links for published documents only" ON public.programme_documents
  FOR SELECT TO anon, authenticated USING (
  EXISTS (SELECT 1 FROM public.official_documents d WHERE d.id = document_id
@@ -60,7 +65,7 @@ ALTER TABLE public.intelligence_candidates
 ALTER TABLE public.intelligence_candidates ADD CONSTRAINT intelligence_candidates_status_check
  CHECK (status IN ('pending_review','approved','rejected','published','withdrawn'));
 
-CREATE TABLE public.editorial_publication_events (
+CREATE TABLE IF NOT EXISTS public.editorial_publication_events (
  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
  candidate_id uuid NOT NULL REFERENCES public.intelligence_candidates(id),
  record_id uuid REFERENCES public.intelligence_records(id),
