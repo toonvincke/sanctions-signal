@@ -14,6 +14,11 @@ describe("SS-024 official source probes", () => {
   const r = await probeOfficialLink("https://ofac.treasury.gov/sanctions-programs-and-country-information",mock);
   expect(r.status).toBe("blocked");
  });
+ it("does not equate HTTP 202 Accepted with a verified official page", async () => {
+  const mock = (async () => new Response(null,{status:202})) as typeof fetch;
+  const r = await probeOfficialLink("https://main.un.org/securitycouncil/en/sanctions/1267",mock);
+  expect(r.status).toBe("unavailable");
+ });
  it("records a healthy response", async () => {
   const mock = (async () => new Response(null,{status:200})) as typeof fetch;
   const r=await probeOfficialLink("https://eur-lex.europa.eu/eli/reg/2014/833/oj",mock);
