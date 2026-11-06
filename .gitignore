@@ -31,7 +31,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Local environment files (never commit secrets)
-.env
-.env.*
-!.env.example
+# Local secret env files (the root .env holds only public browser config and must ship)
+.env.local
+.env.*.local

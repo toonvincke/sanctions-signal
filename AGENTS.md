@@ -14,3 +14,4 @@
 - Each record keeps `source_facts` separate from `practical_implications` (analysis) and carries `legal_status` + `verification_status`. Why: the product must never blur verified facts with interpretation.
 - Admin permission comes only from `public.user_roles`; RLS policies call `private.has_role()` (schema not exposed via the API) and server code queries `user_roles`, never auth metadata. Why: one admin system, and role helpers can't be called by clients.
 - Portal data reads use browser Supabase client query options in `src/lib/intel.ts` under the `ssr:false` `_authenticated` layout. Why: session lives in localStorage; RLS enforces access.
+- Root `.env` (public VITE_ backend URL + publishable key only) must stay committed; never gitignore it. Why: published builds read it, and without it every portal page goes blank.

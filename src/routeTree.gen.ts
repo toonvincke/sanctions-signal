@@ -24,6 +24,8 @@ import { Route as AuthenticatedExplorerRouteImport } from './routes/_authenticat
 import { Route as SanctionsRegimeRouteImport } from './routes/sanctions.$regime'
 import { Route as SanctionsInternationalRouteImport } from './routes/sanctions.international'
 import { Route as AuthenticatedRecordsSlugRouteImport } from './routes/_authenticated/records.$slug'
+import { Route as SanctionsRegimeIndexRouteImport } from './routes/sanctions.$regime.index'
+import { Route as SanctionsRegimeProgramRouteImport } from './routes/sanctions.$regime.$program'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -100,6 +102,16 @@ const AuthenticatedRecordsSlugRoute =
     path: '/records/$slug',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const SanctionsRegimeIndexRoute = SanctionsRegimeIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SanctionsRegimeRoute,
+} as any)
+const SanctionsRegimeProgramRoute = SanctionsRegimeProgramRouteImport.update({
+  id: '/$program',
+  path: '/$program',
+  getParentRoute: () => SanctionsRegimeRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -113,9 +125,11 @@ export interface FileRoutesByFullPath {
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explorer': typeof AuthenticatedExplorerRoute
-  '/sanctions/$regime': typeof SanctionsRegimeRoute
+  '/sanctions/$regime': typeof SanctionsRegimeRouteWithChildren
   '/sanctions/international': typeof SanctionsInternationalRoute
   '/records/$slug': typeof AuthenticatedRecordsSlugRoute
+  '/sanctions/$regime/$program': typeof SanctionsRegimeProgramRoute
+  '/sanctions/$regime/': typeof SanctionsRegimeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -129,9 +143,10 @@ export interface FileRoutesByTo {
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explorer': typeof AuthenticatedExplorerRoute
-  '/sanctions/$regime': typeof SanctionsRegimeRoute
   '/sanctions/international': typeof SanctionsInternationalRoute
   '/records/$slug': typeof AuthenticatedRecordsSlugRoute
+  '/sanctions/$regime/$program': typeof SanctionsRegimeProgramRoute
+  '/sanctions/$regime': typeof SanctionsRegimeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -147,9 +162,11 @@ export interface FileRoutesById {
   '/_authenticated/bookmarks': typeof AuthenticatedBookmarksRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/explorer': typeof AuthenticatedExplorerRoute
-  '/sanctions/$regime': typeof SanctionsRegimeRoute
+  '/sanctions/$regime': typeof SanctionsRegimeRouteWithChildren
   '/sanctions/international': typeof SanctionsInternationalRoute
   '/_authenticated/records/$slug': typeof AuthenticatedRecordsSlugRoute
+  '/sanctions/$regime/$program': typeof SanctionsRegimeProgramRoute
+  '/sanctions/$regime/': typeof SanctionsRegimeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -168,6 +185,8 @@ export interface FileRouteTypes {
     | '/sanctions/$regime'
     | '/sanctions/international'
     | '/records/$slug'
+    | '/sanctions/$regime/$program'
+    | '/sanctions/$regime/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -181,9 +200,10 @@ export interface FileRouteTypes {
     | '/bookmarks'
     | '/dashboard'
     | '/explorer'
-    | '/sanctions/$regime'
     | '/sanctions/international'
     | '/records/$slug'
+    | '/sanctions/$regime/$program'
+    | '/sanctions/$regime'
   id:
     | '__root__'
     | '/'
@@ -201,6 +221,8 @@ export interface FileRouteTypes {
     | '/sanctions/$regime'
     | '/sanctions/international'
     | '/_authenticated/records/$slug'
+    | '/sanctions/$regime/$program'
+    | '/sanctions/$regime/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -212,7 +234,7 @@ export interface RootRouteChildren {
   FeaturesRoute: typeof FeaturesRoute
   PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  SanctionsRegimeRoute: typeof SanctionsRegimeRoute
+  SanctionsRegimeRoute: typeof SanctionsRegimeRouteWithChildren
   SanctionsInternationalRoute: typeof SanctionsInternationalRoute
 }
 
@@ -323,6 +345,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRecordsSlugRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/sanctions/$regime/': {
+      id: '/sanctions/$regime/'
+      path: '/'
+      fullPath: '/sanctions/$regime/'
+      preLoaderRoute: typeof SanctionsRegimeIndexRouteImport
+      parentRoute: typeof SanctionsRegimeRoute
+    }
+    '/sanctions/$regime/$program': {
+      id: '/sanctions/$regime/$program'
+      path: '/$program'
+      fullPath: '/sanctions/$regime/$program'
+      preLoaderRoute: typeof SanctionsRegimeProgramRouteImport
+      parentRoute: typeof SanctionsRegimeRoute
+    }
   }
 }
 
@@ -345,6 +381,20 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface SanctionsRegimeRouteChildren {
+  SanctionsRegimeProgramRoute: typeof SanctionsRegimeProgramRoute
+  SanctionsRegimeIndexRoute: typeof SanctionsRegimeIndexRoute
+}
+
+const SanctionsRegimeRouteChildren: SanctionsRegimeRouteChildren = {
+  SanctionsRegimeProgramRoute: SanctionsRegimeProgramRoute,
+  SanctionsRegimeIndexRoute: SanctionsRegimeIndexRoute,
+}
+
+const SanctionsRegimeRouteWithChildren = SanctionsRegimeRoute._addFileChildren(
+  SanctionsRegimeRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -354,7 +404,7 @@ const rootRouteChildren: RootRouteChildren = {
   FeaturesRoute: FeaturesRoute,
   PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  SanctionsRegimeRoute: SanctionsRegimeRoute,
+  SanctionsRegimeRoute: SanctionsRegimeRouteWithChildren,
   SanctionsInternationalRoute: SanctionsInternationalRoute,
 }
 export const routeTree = rootRouteImport

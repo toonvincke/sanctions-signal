@@ -410,6 +410,45 @@ export type Database = {
         }
         Relationships: []
       }
+      programme_premium_sections: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          jurisdiction: string
+          programme_slug: string
+          published: boolean
+          section_key: string
+          source_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          jurisdiction: string
+          programme_slug: string
+          published?: boolean
+          section_key: string
+          source_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          jurisdiction?: string
+          programme_slug?: string
+          published?: boolean
+          section_key?: string
+          source_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       record_categories: {
         Row: {
           category_id: string
@@ -686,6 +725,42 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string
+          plan: string
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end: string
+          plan: string
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string
+          plan?: string
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
