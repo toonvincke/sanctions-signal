@@ -18,6 +18,7 @@ ALTER TABLE public.intelligence_records
  ADD COLUMN priority boolean DEFAULT false,
  ADD COLUMN updated_at timestamptz DEFAULT now();
 
+ALTER TABLE public.intelligence_candidates ALTER COLUMN id SET DEFAULT gen_random_uuid();
 ALTER TABLE public.intelligence_candidates
  ADD COLUMN source_code text,
  ADD COLUMN source_url text UNIQUE,
@@ -40,6 +41,7 @@ CREATE POLICY "Admins can manage intelligence candidates" ON public.intelligence
  USING (private.has_role(auth.uid(),'admin'::public.app_role))
  WITH CHECK (private.has_role(auth.uid(),'admin'::public.app_role));
 
+ALTER TABLE public.sanctions_sources ALTER COLUMN id SET DEFAULT gen_random_uuid();
 ALTER TABLE public.sanctions_sources
  ADD COLUMN code text UNIQUE,
  ADD COLUMN name text,
