@@ -50,6 +50,9 @@ export async function probeOfficialLink(urlText: string, fetcher: typeof fetch =
         current = next;
         continue;
       }
+      // HTTP 202 Accepted is not proof the official document exists: some
+      // publisher frontends return 202 for bot checks / asynchronous challenges.
+      if (response.status === 202) return result(urlText, checked_at, "unavailable", 202);
       if (response.ok) return result(urlText, checked_at, i ? "redirected" : "ok", response.status,
         i ? current.toString() : undefined);
       if (response.status === 404 || response.status === 410)
