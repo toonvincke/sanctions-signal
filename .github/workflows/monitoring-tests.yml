@@ -6,6 +6,7 @@ on:
       - "supabase/functions/sanctions-sync/**"
       - "supabase/functions/intelligence-discover/**"
       - "supabase/functions/candidate-review/**"
+      - "supabase/functions/official-source-check/**"
       - "drizzle/migrations/0023*"
       - "drizzle/migrations/0024*"
       - "scripts/ss-023-staging-smoke.sql"
@@ -79,7 +80,7 @@ jobs:
       - name: Run OpenAI parsing, validation and mocked HTTP integration tests
         run: deno test --node-modules-dir=auto supabase/functions/_shared/openai-response.test.ts supabase/functions/_shared/intelligence-draft.test.ts supabase/functions/_shared/openai-client.test.ts
       - name: Type-check changed Edge Functions
-        run: deno check --node-modules-dir=auto supabase/functions/assistant/index.ts supabase/functions/intelligence-discover/index.ts supabase/functions/candidate-review/index.ts
+        run: deno check --node-modules-dir=auto supabase/functions/assistant/index.ts supabase/functions/intelligence-discover/index.ts supabase/functions/candidate-review/index.ts supabase/functions/official-source-check/index.ts
 
   premium-rls-tests:
     runs-on: ubuntu-latest
