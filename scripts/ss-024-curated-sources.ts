@@ -7,6 +7,27 @@ import { safeOfficialUrl } from "./ss-024-link-check";
  * consolidated texts. Avoid mapping omnibus or terminated regimes by guesswork.
  */
 const verified: Record<string, [string, string, string]> = {
+  // EU: issuer-specific original legal bases identified in official EUR-Lex records.
+  // A stable original-act link does not assert current consolidated law.
+  "eu|Bosnia and Herzegovina": ["https://eur-lex.europa.eu/eli/dec/2011/173/oj/eng","EUR-Lex — Council Decision 2011/173 (original CFSP act); consult amendments","eurlex_verified_original_act"],
+  "eu|Central African Republic": ["https://eur-lex.europa.eu/eli/reg/2014/224/oj/eng","EUR-Lex — Regulation 2014/224; consult amendments","eurlex_verified_original_act"],
+  "eu|Democratic Republic of the Congo": ["https://eur-lex.europa.eu/eli/reg/2005/1183/oj/eng","EUR-Lex — Regulation 2005/1183; consult amendments","eurlex_verified_original_act"],
+  "eu|Guatemala": ["https://eur-lex.europa.eu/eli/reg/2024/287/oj/eng","EUR-Lex — Regulation 2024/287; consult amendments","eurlex_verified_original_act"],
+  "eu|Guinea": ["https://eur-lex.europa.eu/eli/reg/2009/1284/oj/eng","EUR-Lex — Regulation 2009/1284; consult amendments","eurlex_verified_original_act"],
+  "eu|Guinea-Bissau": ["https://eur-lex.europa.eu/eli/reg/2012/377/oj/eng","EUR-Lex — Regulation 2012/377; consult amendments","eurlex_verified_original_act"],
+  "eu|Haiti": ["https://eur-lex.europa.eu/eli/reg/2022/2309/oj/eng","EUR-Lex — Regulation 2022/2309; consult amendments","eurlex_verified_original_act"],
+  "eu|Lebanon": ["https://eur-lex.europa.eu/eli/reg/2021/1275/oj/eng","EUR-Lex — Regulation 2021/1275; consult amendments","eurlex_verified_original_act"],
+  "eu|Mali": ["https://eur-lex.europa.eu/eli/reg/2017/1770/oj/eng","EUR-Lex — Regulation 2017/1770; consult amendments","eurlex_verified_original_act"],
+  "eu|Moldova": ["https://eur-lex.europa.eu/eli/reg/2023/888/oj/eng","EUR-Lex — Regulation 2023/888; consult amendments","eurlex_verified_original_act"],
+  "eu|Nicaragua": ["https://eur-lex.europa.eu/eli/reg/2019/1716/oj/eng","EUR-Lex — Regulation 2019/1716; consult amendments","eurlex_verified_original_act"],
+  "eu|Russia — human rights": ["https://eur-lex.europa.eu/eli/reg/2024/1485/oj/eng","EUR-Lex — Regulation 2024/1485; consult amendments","eurlex_verified_original_act"],
+  "eu|Somalia": ["https://eur-lex.europa.eu/eli/reg/2010/356/oj/eng","EUR-Lex — Regulation 2010/356; consult amendments","eurlex_verified_original_act"],
+  "eu|South Sudan": ["https://eur-lex.europa.eu/eli/reg/2015/735/oj/eng","EUR-Lex — Regulation 2015/735; consult amendments","eurlex_verified_original_act"],
+  "eu|Sudan": ["https://eur-lex.europa.eu/eli/reg/2014/747/oj/eng","EUR-Lex — Regulation 2014/747; consult amendments","eurlex_verified_original_act"],
+  "eu|Terrorism (CP 931 list)": ["https://eur-lex.europa.eu/eli/reg/2001/2580/oj/eng","EUR-Lex — Regulation 2001/2580; consult amendments","eurlex_verified_original_act"],
+  "eu|Tunisia": ["https://eur-lex.europa.eu/eli/reg/2011/101/oj/eng","EUR-Lex — Regulation 2011/101; consult amendments","eurlex_verified_original_act"],
+  "eu|Yemen": ["https://eur-lex.europa.eu/eli/reg/2014/1352/oj/eng","EUR-Lex — Regulation 2014/1352; consult amendments","eurlex_verified_original_act"],
+  "eu|Zimbabwe": ["https://eur-lex.europa.eu/eli/reg/2004/314/oj/eng","EUR-Lex — Regulation 2004/314; consult amendments","eurlex_verified_original_act"],
   // US: OFAC active programme index.
   "us|Cuba": ["https://ofac.treasury.gov/sanctions-programs-and-country-information/cuba-sanctions","OFAC — Cuba sanctions","ofac_index"],
   "us|Iran": ["https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions","OFAC — Iran sanctions","ofac_index"],
