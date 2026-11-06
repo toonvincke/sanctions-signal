@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { usePremiumAccess } from "@/hooks/use-premium-access";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Bookmark, BookmarkCheck, ExternalLink, Flag } from "lucide-react";
 import { toast } from "sonner";
@@ -7,22 +8,28 @@ import { bookmarksQuery, formatDate, formatMoney, LEGAL_STATUS_LABELS, recordQue
 import { TypeBadge, VerificationBadge } from "@/components/intel/badges";
 
 export const Route = createFileRoute("/_authenticated/records/$slug")({
-  loader: async ({ context, params }) => {
-    const [rec] = await Promise.all([
-      context.queryClient.ensureQueryData(recordQuery(params.slug)),
-      context.queryClient.ensureQueryData(bookmarksQuery),
-    ]);
-    if (!rec) throw notFound();
-    return { headline: rec.headline };
-  },
-  head: ({ loaderData }) => ({ meta: [{ title: `${loaderData?.headline ?? "Record"} — Lexsanction` }] }),
-  notFoundComponent: () => (
-    <div className="p-10 text-center">
-      Record not found. <Link to="/explorer" className="underline">Back to Explorer</Link>
-    </div>
-  ),
-  component: RecordPage,
+  head: () => ({ meta: [{ title: "Intelligence record — Lexsanction" }] }),
+  component: RecordAccessPage,
 });
+
+function RecordAccessPage() {
+  const { slug } = Route.useParams();
+  const { state, isPremium } = usePremiumAccess("eu", "record-access", false);
+  if (state === "loading") return <div className="mx-auto max-w-4xl px-6 py-16 text-muted-foreground" role="status">Checking subscription access…</div>;
+  if (!isPremium) return (
+    <div className="mx-auto max-w-4xl px-6 py-16">
+      <p className="font-mono text-xs uppercase tracking-widest text-brand">Premium intelligence</p>
+      <h1 className="mt-4 font-serif text-4xl">Unlock the complete intelligence record</h1>
+      <p className="mt-4 text-muted-foreground">Full article details and analysis require Premium. Only reviewed public headlines are available without a subscription.</p>
+      {state === "unavailable" && <p role="status" className="mt-3 text-sm text-warning">Subscription verification is temporarily unavailable.</p>}
+      <div className="mt-7 flex flex-wrap gap-4">
+        <Link to="/pricing" className="bg-primary px-5 py-3 text-sm font-medium text-primary-foreground">View Premium plans</Link>
+        <Link to="/explorer" className="border px-5 py-3 text-sm">Back to intelligence</Link>
+      </div>
+    </div>
+  );
+  return <RecordPage key={slug} />;
+}
 
 function List({ items }: { items: string[] }) {
   if (!items?.length) return <span className="text-muted-foreground">—</span>;
