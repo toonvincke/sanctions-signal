@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteChrome";
+import { OfficialProgrammeSources } from "@/components/site/OfficialProgrammeSources";
 import { LockKeyhole } from "lucide-react";
 import { usePremiumAccess } from "@/hooks/use-premium-access";
 import { REGIMES, type RegimeSlug } from "@/lib/sanctions-programs";
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/sanctions/$regime/$program")({
 
 const sections = [
   ["overview", "Overview"],
+  ["official-documents", "Official documents"],
   ["legal-framework", "Legal framework"],
   ["restrictions", "Restrictions"],
   ["guidance", "Guidance / FAQs"],
@@ -86,6 +88,10 @@ function ProgrammePage() {
               </dl>
               <p className="mt-4 text-sm text-muted-foreground">This is a concise overview of information currently recorded in the programme catalogue, not a complete legal assessment.</p>
             </section>
+            <section id="official-documents" className="scroll-mt-6">
+              <h2 className="mb-4 border-b pb-2 font-serif text-2xl">Official documents</h2>
+              <OfficialProgrammeSources jurisdiction={jurisdiction} slug={slug} />
+            </section>
             <PremiumProgrammeContent jurisdiction={jurisdiction} slug={slug} />
 
           </div>
@@ -132,7 +138,7 @@ function PremiumProgrammeContent({ jurisdiction, slug }: { jurisdiction: string;
           </div>
         </div>
       )}
-      {sections.filter(([id]) => id !== "overview").map(([id, label]) => {
+      {sections.filter(([id]) => id !== "overview" && id !== "official-documents").map(([id, label]) => {
         const entries = isPremium ? premiumSections.filter((entry) => entry.section_key === id) : [];
         return (
           <section key={id} id={id} className="scroll-mt-6">
