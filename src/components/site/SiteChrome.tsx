@@ -80,7 +80,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                   search={{ mode: "signup" }}
                   className="bg-navy-foreground px-3 py-1.5 font-medium text-navy hover:opacity-90"
                 >
-                  Start trial
+                  Create account
                 </Link>
               </>
             )}

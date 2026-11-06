@@ -57,6 +57,34 @@
       "when": 1793873443556,
       "tag": "0007_atomic_sanctions_import",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793959480000,
+      "tag": "0008_premium_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793959481000,
+      "tag": "0009_intelligence_preview_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793959482000,
+      "tag": "0010_least_privilege_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793959483000,
+      "tag": "0011_record_category_access",
+      "breakpoints": true
     }
   ]
 }
