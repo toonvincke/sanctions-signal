@@ -2,11 +2,11 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteChrome";
 import { LockKeyhole } from "lucide-react";
 import { usePremiumAccess } from "@/hooks/use-premium-access";
-import { REGIMES } from "@/lib/sanctions-programs";
+import { REGIMES, type RegimeSlug } from "@/lib/sanctions-programs";
 import { getProgrammeDetail, OFFICIAL_LEGAL_PORTALS } from "@/lib/programme-detail";
 
 export const Route = createFileRoute("/sanctions/$regime/$program")({
-  loader: ({ params }) => {
+  loader: ({ params }): { jurisdiction: RegimeSlug; slug: string } => {
     const detail = getProgrammeDetail(params.regime, params.program);
     if (!detail) throw notFound();
     return { jurisdiction: detail.jurisdiction, slug: detail.slug };
@@ -47,7 +47,7 @@ function EmptyState({ text }: { text: string }) {
 }
 
 function ProgrammePage() {
-  const { jurisdiction, slug } = Route.useLoaderData();
+  const { jurisdiction, slug } = Route.useLoaderData() as { jurisdiction: RegimeSlug; slug: string };
   const detail = getProgrammeDetail(jurisdiction, slug);
   if (!detail) return null;
   const { programme, group } = detail;
