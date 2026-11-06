@@ -1,73 +1,83 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validateIntelligenceDraft } from "../_shared/intelligence-draft.ts";
 
-const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
-const contentTypes = ["sanctions_development","case_law","enforcement_action","guidance","legislation","circumvention"];
-const legalStatuses = ["final_judgment","interim","ag_opinion","settlement","penalty_notice","conviction","allegation","in_force","announced","not_applicable"];
+// Service-role key never leaves this edge function.
+const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+const respond = (body: unknown, status = 200) => Response.json(body, { status, headers: cors });
+const approvedActions = ["approve", "reject", "correct", "withdraw"];
+
+function cleanDraft(raw: unknown, correction: boolean) {
+  const draft = validateIntelligenceDraft(raw);
+  const cleaned: Record<string, unknown> = {};
+  for (const key of ["content_type", "legal_status", "headline", "executive_summary",
+    "source_facts", "detailed_analysis", "practical_implications"]) {
+    cleaned[key] = typeof draft[key] === "string" ? (draft[key] as string).trim().slice(0, 20000) : draft[key];
+  }
+  for (const key of ["affected_entities", "affected_sectors", "legal_provisions", "tags"]) {
+    cleaned[key] = (draft[key] as string[]).slice(0, 100).map((v) => v.slice(0, 300));
+  }
+  cleaned.priority = draft.priority;
+  if (!correction) {
+    const slugBase = (cleaned.headline as string).toLowerCase().normalize("NFKD")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 72) || "intelligence-update";
+    cleaned.slug = slugBase.replace(/-+$/, "") + "-" + crypto.randomUUID().slice(0, 8);
+  }
+  return cleaned;
+}
 
 Deno.serve(async (req) => {
-  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+  if (req.method !== "POST") return respond({ error: "Method not allowed" }, 405);
+
   const auth = req.headers.get("authorization") ?? "";
-  const token = auth.replace(/^Bearer\s+/i, "");
-  if (!token || token === auth) return new Response("Unauthorized", { status: 401 });
-  const { data: { user }, error: authError } = await db.auth.getUser(token);
-  if (authError || !user) return new Response("Unauthorized", { status: 401 });
-  // Admin permission comes only from public.user_roles (single source of truth).
-  const { data: adminRole, error: roleError } = await db.from("user_roles")
+  const match = auth.match(/^Bearer\s+(\S+)$/i);
+  if (!match) return respond({ error: "Authentication required" }, 401);
+  const { data: { user }, error: authError } = await db.auth.getUser(match[1]);
+  if (authError || !user) return respond({ error: "Authentication required" }, 401);
+
+  // Neither user_metadata nor client-provided roles authorize publication.
+  const { data: role, error: roleError } = await db.from("user_roles")
     .select("id").eq("user_id", user.id).eq("role", "admin").maybeSingle();
-  if (roleError) return new Response("Could not verify permissions", { status: 500 });
-  if (!adminRole) return new Response("Forbidden", { status: 403 });
+  if (roleError) return respond({ error: "Unable to verify reviewer permissions" }, 500);
+  if (!role) return respond({ error: "Admin access required" }, 403);
 
-  const body = await req.json().catch(() => ({}));
-  const candidateId = typeof body.candidate_id === "string" ? body.candidate_id : "";
-  const decision = body.decision;
-  const notes = typeof body.review_notes === "string" ? body.review_notes.slice(0, 4000) : null;
-  if (!candidateId || !["approve","reject"].includes(decision)) return Response.json({ error: "candidate_id and decision (approve/reject) are required." }, { status: 400 });
-
-  const { data: candidate, error: candidateError } = await db.from("intelligence_candidates")
-    .select("*").eq("id", candidateId).single();
-  if (candidateError || !candidate) return Response.json({ error: "Candidate not found." }, { status: 404 });
-  if (candidate.status !== "pending_review") return Response.json({ error: "Only pending candidates can be reviewed." }, { status: 409 });
-
-  if (decision === "reject") {
-    const { error } = await db.from("intelligence_candidates").update({
-      status: "rejected", reviewer_id: user.id, reviewed_at: new Date().toISOString(), review_notes: notes,
-    }).eq("id", candidateId);
-    if (error) return Response.json({ error: error.message }, { status: 500 });
-    return Response.json({ status: "rejected" });
+  if (Number(req.headers.get("content-length") ?? 0) > 300_000) {
+    return respond({ error: "Payload too large" }, 413);
+  }
+  const body = await req.json().catch(() => null);
+  if (!body || typeof body !== "object" ||
+      typeof body.candidate_id !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(body.candidate_id) ||
+      !approvedActions.includes(body.decision)) {
+    return respond({ error: "Valid candidate_id and decision required" }, 400);
+  }
+  const notes = typeof body.review_notes === "string" ? body.review_notes.trim().slice(0, 4000) : null;
+  let record: Record<string, unknown> | null = null;
+  if (body.decision === "approve" || body.decision === "correct") {
+    try {
+      record = cleanDraft(body.draft, body.decision === "correct");
+    } catch {
+      return respond({ error: "A complete, schema-valid, reviewed draft is required" }, 422);
+    }
   }
 
-  const draft = candidate.ai_draft;
-  if (!draft || !contentTypes.includes(draft.content_type) || !legalStatuses.includes(draft.legal_status) ||
-      !draft.headline || !draft.executive_summary || !draft.source_facts || !draft.practical_implications) {
-    return Response.json({ error: "Candidate has no complete, schema-valid AI draft. Add or correct the draft before approval." }, { status: 422 });
+  // A single database RPC locks the candidate and atomically publishes/withdraws,
+  // updates its status, fires the public-preview trigger and inserts an audit event.
+  const { data, error } = await db.rpc("finalize_intelligence_candidate", {
+    p_candidate_id: body.candidate_id, p_decision: body.decision,
+    p_actor: user.id, p_record: record, p_notes: notes,
+  });
+  if (error) {
+    console.error("Editorial transaction failed:", error.code, error.message);
+    const conflict = /already reviewed|Only published articles|not currently published|Candidate not found/i.test(error.message);
+    return respond({ error: conflict ? "Candidate state changed; refresh the review queue." : "Could not complete editorial decision." }, conflict ? 409 : 500);
   }
-
-  const slugBase = String(draft.headline).toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 72) || "intelligence-update";
-  const slug = `${slugBase}-${crypto.randomUUID().slice(0, 8)}`;
-  const record = {
-    slug, content_type: draft.content_type, headline: String(draft.headline).slice(0, 300),
-    executive_summary: String(draft.executive_summary).slice(0, 5000),
-    detailed_analysis: typeof draft.detailed_analysis === "string" ? draft.detailed_analysis : null,
-    source_facts: String(draft.source_facts), practical_implications: String(draft.practical_implications),
-    source_url: candidate.source_url, source_title: candidate.source_title,
-    source_publisher: candidate.source_publisher, publication_date: candidate.published_at?.slice(0,10) ?? new Date().toISOString().slice(0,10),
-    legal_status: draft.legal_status, verification_status: "verified",
-    affected_entities: Array.isArray(draft.affected_entities) ? draft.affected_entities.slice(0,100) : [],
-    affected_sectors: Array.isArray(draft.affected_sectors) ? draft.affected_sectors.slice(0,100) : [],
-    legal_provisions: Array.isArray(draft.legal_provisions) ? draft.legal_provisions.slice(0,100) : [],
-    tags: Array.isArray(draft.tags) ? draft.tags.slice(0,100) : [],
-    priority: Boolean(draft.priority), retrieved_at: new Date().toISOString(),
-  };
-  const { data: inserted, error: insertError } = await db.from("intelligence_records").insert(record).select("id,slug").single();
-  if (insertError || !inserted) return Response.json({ error: insertError?.message ?? "Could not publish record." }, { status: 500 });
-
-  const { error: candidateUpdateError } = await db.from("intelligence_candidates").update({
-    status: "published", reviewer_id: user.id, reviewed_at: new Date().toISOString(),
-    review_notes: notes, published_record_id: inserted.id,
-  }).eq("id", candidateId);
-  if (candidateUpdateError) {
-    // Keep the created record traceable; flag the candidate so an administrator can reconcile it.
-    return Response.json({ error: "Record was created but candidate status could not be updated.", record: inserted }, { status: 500 });
-  }
-  return Response.json({ status: "published", record: inserted });
+  return respond(data);
 });
