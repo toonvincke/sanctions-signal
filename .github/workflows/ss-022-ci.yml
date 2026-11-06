@@ -4,6 +4,8 @@ on:
     paths:
       - 'src/**'
       - 'scripts/ss-022-seed.ts'
+      - 'scripts/ss-024-*.ts'
+      - 'scripts/ss-024-*.sql'
       - 'drizzle/migrations/**'
       - 'package.json'
       - 'bun.lock*'
@@ -33,3 +35,20 @@ jobs:
           bun run scripts/ss-022-seed.ts > /tmp/ss-022-seed.sql
           test -s /tmp/ss-022-seed.sql
           grep -q 'INSERT INTO public.sanctions_programmes' /tmp/ss-022-seed.sql
+
+      - name: Validate SS-024 mapping inventory and deduplication
+        if: always()
+        run: |
+          bun run scripts/ss-024-curated-sources.ts --json > /tmp/ss024-catalogue.json
+          bun run scripts/ss-024-curated-sources.ts --sql > /tmp/ss024-backfill.sql
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/ss024-catalogue.json'))
+          assert d['total'] == 99, 'Catalogue count changed; review source mappings'
+          keys=[(p['jurisdiction'],p['slug']) for p in d['programmes']]
+          assert len(keys)==len(set(keys)), 'Programme keys are not unique'
+          assert sum(d['counts'].values())==len(keys), 'Coverage count inconsistent'
+          assert d['counts']['mapped'] >= 70, 'Previously verified programme mappings missing'
+          assert all((p['url'] or '').startswith('https://') for p in d['programmes'] if p['status']=='mapped')
+          print('Verified source mapping inventory:', d['counts'])
+          PY
