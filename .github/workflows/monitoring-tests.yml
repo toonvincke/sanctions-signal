@@ -7,6 +7,11 @@ on:
       - "supabase/functions/intelligence-discover/**"
       - "supabase/functions/assistant/**"
       - "drizzle/migrations/0006*"
+      - "drizzle/migrations/0008*"
+      - "drizzle/migrations/0009*"
+      - "drizzle/migrations/0010*"
+      - "drizzle/migrations/0011*"
+      - "supabase/tests/**"
       - "tests/sql/**"
       - ".github/workflows/monitoring-tests.yml"
   workflow_dispatch:
@@ -71,3 +76,26 @@ jobs:
         run: deno test --node-modules-dir=auto supabase/functions/_shared/openai-response.test.ts supabase/functions/_shared/intelligence-draft.test.ts supabase/functions/_shared/openai-client.test.ts
       - name: Type-check changed Edge Functions
         run: deno check --node-modules-dir=auto supabase/functions/assistant/index.ts supabase/functions/intelligence-discover/index.ts
+
+  premium-rls-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Execute premium entitlement, draft visibility and least-privilege SQL integration tests
+        env:
+          PGPASSWORD: postgres
+        run: psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d postgres -f tests/sql/ss025_paywall_rls.sql
