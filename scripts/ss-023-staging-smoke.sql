@@ -3,6 +3,7 @@ BEGIN;
 DO $$
 DECLARE
  v_admin uuid;
+ v_free uuid;
  v_candidate uuid;
  v_rejected uuid;
  v_programme uuid;
@@ -17,6 +18,9 @@ DECLARE
 BEGIN
  SELECT user_id INTO v_admin FROM public.user_roles WHERE role='admin' LIMIT 1;
  IF v_admin IS NULL THEN RAISE EXCEPTION 'Missing staging admin test subject'; END IF;
+ SELECT user_id INTO v_free FROM public.user_roles WHERE role='user'
+ AND user_id NOT IN (SELECT user_id FROM public.user_roles WHERE role='admin') LIMIT 1;
+ IF v_free IS NULL THEN RAISE EXCEPTION 'Missing nonadmin test subject'; END IF;
  IF has_table_privilege('anon','public.intelligence_candidates','SELECT') OR
   has_table_privilege('authenticated','public.editorial_publication_events','SELECT') OR
   has_table_privilege('anon','public.official_documents','UPDATE') OR
@@ -31,6 +35,12 @@ BEGIN
   'detailed_analysis','Human-reviewed legal analysis','practical_implications','Human-reviewed implications',
   'priority',false,'tags',jsonb_build_array('smoke'),'affected_entities',jsonb_build_array(),
   'affected_sectors',jsonb_build_array(),'legal_provisions',jsonb_build_array());
+ v_bad:=false;
+ BEGIN
+  PERFORM public.finalize_intelligence_candidate(v_candidate,'approve',v_free,v_json,'unauthorized');
+ EXCEPTION WHEN OTHERS THEN v_bad:=true; END;
+ IF NOT v_bad OR EXISTS(SELECT 1 FROM public.intelligence_records WHERE slug=v_slug)
+  THEN RAISE EXCEPTION 'Nonadmin reviewer was able to publish'; END IF;
  v_bad:=false;
  BEGIN
   PERFORM public.finalize_intelligence_candidate(v_candidate,'approve',v_admin,v_json - 'source_facts',null);
@@ -95,6 +105,8 @@ SET LOCAL ROLE anon;
 DO $$ BEGIN
  IF EXISTS (SELECT 1 FROM public.official_documents WHERE canonical_url='https://eur-lex.europa.eu/eli/reg/2024/1745/oj')
  THEN RAISE EXCEPTION 'Anonymous users see withdrawn source'; END IF;
+ IF EXISTS (SELECT 1 FROM public.intelligence_previews WHERE slug LIKE 'ss023-smoke-%')
+ THEN RAISE EXCEPTION 'Anonymous users see withdrawn article preview'; END IF;
 END $$;
 RESET ROLE;
 SELECT 'SS-023 staging smoke passed; rolling back' AS result;
