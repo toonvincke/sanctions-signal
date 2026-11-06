@@ -53,6 +53,9 @@ ALTER TABLE public.sanctions_sources
 \i drizzle/migrations/0012_programme_document_model.sql
 \i drizzle/migrations/0023_publication_review.sql
 \i drizzle/migrations/0024_official_source_coverage.sql
+-- The isolated CI database starts empty, unlike the seeded staging catalogue.
+INSERT INTO public.sanctions_programmes(jurisdiction,slug,name)
+ VALUES('eu','ss018-check','SS018 check') ON CONFLICT DO NOTHING;
 \i scripts/ss-023-staging-smoke.sql
 \i scripts/ss-024-staging-smoke.sql
 
