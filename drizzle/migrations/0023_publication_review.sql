@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS public.editorial_publication_events (
  notes text,
  occurred_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX editorial_events_candidate_idx ON public.editorial_publication_events(candidate_id,occurred_at DESC);
+CREATE INDEX IF NOT EXISTS editorial_events_candidate_idx ON public.editorial_publication_events(candidate_id,occurred_at DESC);
 ALTER TABLE public.editorial_publication_events ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.editorial_publication_events FROM PUBLIC,anon,authenticated;
 GRANT ALL ON public.editorial_publication_events TO service_role;
