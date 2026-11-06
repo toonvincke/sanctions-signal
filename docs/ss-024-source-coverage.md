@@ -2,12 +2,12 @@
 
 ## Implemented in stacked PR #43
 - Lovable staging catalogue: **99 programmes**: EU 43, US 24, UK 17, UN 15 (6 November 2026).
-- **75 programmes have explicitly mapped official references**:
+- **94 programmes have explicitly mapped official references**:
   - 21 US: OFAC programme index entry pages;
   - 15 UK: GOV.UK sanctions guidance pages;
   - 15 UN: Security Council sanctions-committee pages;
-  - 24 EU: EUR-Lex ELI links to the **original** explicitly identified Council Regulation. Original texts may be amended or repealed; no claim of current consolidated legal status.
-- Remaining **24 programmes** show an explicit unmapped state and a clearly labeled jurisdiction-level portal, not a fabricated programme citation.
+  - 43 EU: EUR-Lex ELI links to original identified Council Regulations or CFSP Decisions. Original texts may be amended or repealed; no claim of current consolidated legal status.
+- Remaining **5 programmes** show an explicit unmapped state and a clearly labeled jurisdiction-level portal, not a fabricated programme citation.
 - Source-of-truth curated mapping in `scripts/ss-024-curated-sources.ts`; checked-in repeatable mapping SQL in `scripts/ss-024-curated-source-backfill.sql`. Do not overwrite curator-changed mappings.
 - `drizzle/migrations/0024_official_source_coverage.sql`: additive programme source status, official landing page URL/label/issuer and link health metadata. Migration applied and successfully replayed in isolated staging.
 - Programme UI separates official landing references, published dated source documents and Premium legal analyses. SS-023 provides RLS for published documents; AI content requires editorial approval.
@@ -18,15 +18,15 @@
 
 ## Verified (6 November 2026)
 - 0024 migration applied in separate Lovable staging project `c83df1e5-0838-4ae4-80dd-3e1426118c05`, **not production**. Both rollback-only SS-023 and SS-024 staging SQL smoke tests passed.
-- Staging database: 75 mapped; 24 awaiting source mapping. No pending candidates, official document entries or audit events (no editorial test data persisted).
+- Staging database: 94 mapped; 5 awaiting source mapping after evidence-based EU legal act enrichment. No pending candidates, official document entries or audit events (no editorial test data persisted).
 - GitHub Actions: publication-integration, database, parser, XML, OpenAI, Premium RLS, frontend and catalogue validation green on last confirmed PR head (see latest PR checks).
-- Existing Lovable preview projects have **not** received the featurebranch frontend/Edge Functions.
+- The isolated Lovable staging preview received a file-exact sync of the PR #42/#43 code, and the three staging Edge Functions were deployed. No production deployment. Signed-in browser E2E is still unverified because staging test-user sign-in requires an approval flow unavailable to the agent.
 
 ## Remaining acceptance checks under SS-018 (#24)
-1. Deploy the exact reviewed code to **the separate Lovable staging app**, including the `candidate-review`, `intelligence-discover` and `official-source-check` Edge Functions; preserve database schema history and keys.
-2. Run real authenticated admin/free/premium/anonymous browser and network tests. Confirm queue visibility, approval, rejection, correction, withdrawal, audit history, publication preview, and correct route refresh.
-3. Perform bounded HTTP link checks for all mapped entries. Existing staging mapping timestamps are **not** evidence of reachability: they are null until the checker runs. Confirm redirects and special publisher behavior; correct 404s and ensure 403/429 do not mark legally valid sources broken.
-4. Enrich remaining 24 programmes with verified primary source links where available. Coverage remains transparent until then.
+1. Reconcile the separate staging project's copied source files with the latest PR head, and keep the staging Edge Functions in sync with any later security fixes. This preview is a file-level copy, not a Git branch switch.
+2. Run real authenticated admin/free/premium/anonymous browser and network tests. Rollback-only DB role-matrix publishing tests already passed, and all three staging Edge Functions returned 401 for unauthorized calls; this does NOT replace real authenticated E2E. Confirm queue visibility, approval, rejection, correction, withdrawal, audit history, publication preview, and correct route refresh.
+3. Perform bounded HTTP link checks for all mapped entries. A read-only GitHub Actions check of the initial 75 mappings returned 39 direct HTTP 200 results, 15 UN HTTP 202 and 20 OFAC timeouts (74 distinct links); 202 is now explicitly treated as inconclusive, not 'verified'. Rerun for the expanded 94 mappings. Existing staging mapping timestamps are **not** evidence of reachability: they are null until the checker runs. Confirm redirects and special publisher behavior; correct 404s and ensure 403/429 do not mark legally valid sources broken.
+4. Enrich remaining 5 programmes with verified primary source links where available. Coverage remains transparent until then.
 5. Enable daily source update monitoring only when trusted feeder rules are curated and tested. Further official guidance/licensing document-level enrichment should follow validated programme mapping.
 6. Inspect whether a merge to `main` triggers Lovable deployment or GitHub Actions jobs before merging. No production rollout without owner consent.
 
