@@ -35,7 +35,7 @@ function Explorer() {
   useEffect(() => setQ(search.q ?? ""), [search.q]);
 
   const set = (k: Key | "q", v: string | undefined) =>
-    navigate({ search: (prev) => ({ ...prev, [k]: prev[k as keyof typeof prev] === v ? undefined : v || undefined }) });
+    navigate({ search: (prev: Record<string, string | undefined>) => ({ ...prev, [k]: prev[k as keyof typeof prev] === v ? undefined : v || undefined }) });
 
   const groups: { key: Key; label: string; options: { value: string; label: string }[] }[] = [
     { key: "type", label: "Content type", options: types.map((t) => ({ value: t, label: CONTENT_TYPE_LABELS[t] })) },

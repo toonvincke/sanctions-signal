@@ -1,14 +1,14 @@
 import { createFileRoute, getRouteApi, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteChrome";
 import { RegimeHero, SourceBox } from "@/components/site/RegimeHero";
-import { REGIMES } from "@/lib/sanctions-programs";
+import { REGIMES, type RegimeSlug } from "@/lib/sanctions-programs";
 import { programmeSlug } from "@/lib/programme-detail";
 
 const regimeRoute = getRouteApi("/sanctions/$regime");
 
 export const Route = createFileRoute("/sanctions/$regime/")({
-  head: ({ loaderData }) => {
-    const r = loaderData ? REGIMES[loaderData.slug] : undefined;
+  head: ({ params }) => {
+    const r = REGIMES[params.regime as RegimeSlug] as (typeof REGIMES)[RegimeSlug] | undefined;
     if (!r) return { meta: [{ title: "Sanctions programmes — Lexsanction" }] };
     const title = `${r.label} — programme overview | Lexsanction`;
     const description = `Overview of ${r.title.toLowerCase()}: legal basis, scope and responsible authorities, with links to the official lists.`;
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/sanctions/$regime/")({
 });
 
 function RegimePage() {
-  const { slug } = regimeRoute.useLoaderData();
+  const { slug } = regimeRoute.useLoaderData() as { slug: RegimeSlug };
   const r = REGIMES[slug];
   const count = r.groups.reduce((n, g) => n + g.programs.length, 0);
   return (

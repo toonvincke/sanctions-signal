@@ -197,6 +197,77 @@ export type Database = {
           },
         ]
       }
+      intelligence_previews: {
+        Row: {
+          authority_id: string | null
+          content_type: Database["public"]["Enums"]["content_type"]
+          headline: string
+          jurisdiction_id: string | null
+          publication_date: string
+          record_id: string
+          regime_id: string | null
+          slug: string
+          source_publisher: string | null
+          source_url: string
+          updated_at: string
+        }
+        Insert: {
+          authority_id?: string | null
+          content_type: Database["public"]["Enums"]["content_type"]
+          headline: string
+          jurisdiction_id?: string | null
+          publication_date: string
+          record_id: string
+          regime_id?: string | null
+          slug: string
+          source_publisher?: string | null
+          source_url: string
+          updated_at?: string
+        }
+        Update: {
+          authority_id?: string | null
+          content_type?: Database["public"]["Enums"]["content_type"]
+          headline?: string
+          jurisdiction_id?: string | null
+          publication_date?: string
+          record_id?: string
+          regime_id?: string | null
+          slug?: string
+          source_publisher?: string | null
+          source_url?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_previews_authority_id_fkey"
+            columns: ["authority_id"]
+            isOneToOne: false
+            referencedRelation: "authorities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_previews_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_previews_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: true
+            referencedRelation: "intelligence_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_previews_regime_id_fkey"
+            columns: ["regime_id"]
+            isOneToOne: false
+            referencedRelation: "regimes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intelligence_record_versions: {
         Row: {
           change_reason: string | null
@@ -406,6 +477,45 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      programme_premium_sections: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          jurisdiction: string
+          programme_slug: string
+          published: boolean
+          section_key: string
+          source_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          jurisdiction: string
+          programme_slug: string
+          published?: boolean
+          section_key: string
+          source_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          jurisdiction?: string
+          programme_slug?: string
+          published?: boolean
+          section_key?: string
+          source_url?: string | null
+          title?: string
           updated_at?: string
         }
         Relationships: []
@@ -686,6 +796,42 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string
+          plan: string
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end: string
+          plan: string
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string
+          plan?: string
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
