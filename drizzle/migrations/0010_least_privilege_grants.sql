@@ -6,7 +6,7 @@ REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.intelligence_previews TO anon, authenticated;
 
 -- Non-sensitive catalogues (public HTML uses a static programme catalogue).
-GRANT SELECT ON public.jurisdictions, public.regimes, public.authorities, public.categories TO authenticated;
+GRANT SELECT ON public.jurisdictions, public.regimes, public.authorities, public.categories TO anon, authenticated;
 
 -- Confidential intelligence: the SELECT RLS policy requires verified+premium or admin.
 GRANT SELECT ON public.intelligence_records, public.record_categories TO authenticated;
