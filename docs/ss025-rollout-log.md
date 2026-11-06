@@ -1,36 +1,39 @@
-# SS-025 — Lovable Cloud rollout log (6 November 2026)
+# SS-025 — Gecontroleerde uitrol (6 november 2026)
 
-## Current state
-- GitHub: draft PR #37, feature branch `feature/ss-025-pricing-preview-paywall`; not merged.
-- Lovable project: Sanctions Signal Atlas (`11cd0f68-3c90-4464-95f5-dc21b750a5e2`).
-- Website has not been published; Lovable Cloud is a real, persistent database.
-- No confirmed **current full restorable database backup** available through the connected tools. Previous backup must not be assumed current.
+## Status
+- **Database migraties 0008–0011 toegepast** op Lovable Cloud PostgreSQL van Sanctions Signal Atlas.
+- **Drizzle-migratiegeschiedenis afgestemd**: 12 regels met SHA-256-hashes overeenkomstig `drizzle/migrations/meta/_journal.json` (regels 9–12 registreren 0008–0011).
+- **PR #37 gemerged** naar GitHub `main`, commit `35ed776b23704d163f09805113a011c0799b177b`.
+- Lovable werkte op branch `fix/ss-021-nested-programme-rendering`; merge-commit `9964b5652d270b97f738a719aaf6c20f6b1a8b2f` integreert main zonder force push of verlies van Lovable-config.
+- **PR #39 gemerged** naar main, zodat Lovable's aanvullende type/route-verbeteringen ook in de canonieke branch zitten.
+- De gewijzigde `assistant` Edge Function is volgens Lovable succesvol gedeployed; twee anonieme requests zijn met HTTP 401 geweigerd.
+- Project is **niet gepubliceerd**. Premium checkout en betalingen zijn **niet geactiveerd**.
 
-## Applied directly to Lovable Cloud (already live)
-1. `drizzle/migrations/0008_premium_access.sql`: creates `user_subscriptions`, `programme_premium_sections`, private entitlement helper and RLS policies. Zero subscriptions, zero premium sections. **Applied outside Drizzle migration ledger**; reconcile before automatic migration/release. GitHub migration is now replay-safe for existing objects.
-2. Interim RLS hardening: `ALTER POLICY "auth read" ON public.intelligence_records USING (verification_status='verified' OR private.has_role(auth.uid(),'admin'::public.app_role))`. This hides pending/unverified records but does **not yet** enforce the Premium paywall on approved full articles.
-3. Interim least-privilege: `REVOKE TRUNCATE, TRIGGER, REFERENCES ON ALL TABLES IN SCHEMA public FROM anon, authenticated`.
+## Terugval en back-up
+- Via de verbonden Lovable-tools kon de actuele volledige databaseback-up **niet direct worden ingezien**. Eerder bevestigde gebruiker een back-up van **5 november 2026 om 01:07:33 UTC**; controleer handmatig op een recentere snapshot via Lovable Cloud Backups voordat verdere risicovolle mutaties plaatsvinden.
+- Voor migraties zijn huidige autorisatieregels vastgelegd in private tabellen:
+  `private.ss025_pre_rollout_policies` (24 regels) en
+  `private.ss025_pre_rollout_grants` (122 regels). **Deze tabellen zijn geen volledige herstelbare databaseback-up.**
+- Alle vier migraties zijn vóór definitieve toepassing met succes in één rollbacktransactie op de echte database getest.
 
-All statements executed in transactions. No intelligence records changed or deleted.
+## Verificatie
+- Oorspronkelijke 13 intelligence-records behouden, waarvan 10 goedgekeurd en 3 concept.
+- 10 goedgekeurde, veilige headline-only rows in `intelligence_previews`.
+- Simulatie met authentieke PostgreSQL-rollen en `auth.uid()`-claims in ROLLBACK-transacties:
+  - anoniem: 10 publieke previews;
+  - gratis ingelogd: 0 volledige artikelen, 10 previews;
+  - actief Premium: 10 goedgekeurde volledige artikelen;
+  - verlopen Premium: 0 volledige artikelen;
+  - administrator: alle 13 records inclusief drafts.
+- Onderliggende `TRUNCATE`-rechten voor browserrollen ingetrokken en gebruiker kan `user_subscriptions` niet muteren.
+- GitHub frontend/CI checks groen voor PR #37 en #39.
+- Lovable agent rapporteerde 18/18 projecttests geslaagd na route-tree regeneratie.
+- Anonieme request naar vernieuwde AI Edge Function: HTTP 401, ook met alleen public app key.
 
-## Verified against live database
-- 13 intelligence records preserved (10 verified, 3 pending_review).
-- `user_subscriptions` and `programme_premium_sections` exist, both empty.
-- Anonymous access to full intelligence returns 0 rows.
-- A simulated non-premium authenticated account returns only 10 verified records, no drafts.
-- Anon/authenticated lack `TRUNCATE` on intelligence_records.
-- Authenticated users lack `INSERT` and `UPDATE` on user_subscriptions.
-- All four migrations `0008`–`0011` executed together successfully in a **rolled-back transaction** against the real schema, with 10 public headline previews.
-- Replaying revised `0008` was tested successfully in a rollback transaction.
-
-## Remaining rollout gates — do not treat as done
-1. Confirm a **fresh recoverable backup** through Lovable project Cloud/database settings. Connected Lovable tools do not expose backup management.
-2. Align Drizzle migration ledger and journal with the direct application of `0008` (avoid duplicate or missing migrations).
-3. Coordinate new app/Edge Function deployment with `0009`–`0011` to avoid breaking existing intelligence views or exposing protected content through the old AI endpoint.
-4. Apply remaining migrations within a controlled maintenance window, then run `supabase/tests/ss025_security_assertions.sql`.
-5. Verify direct REST API, full programme detail routes, public article previews, admin review, expired subscriptions, and AI assistant with actual user tokens (anonymous/free/paid/expired/admin).
-6. Regenerate Supabase types for new tables; check caching, browser logout/login transitions, and plan expiry.
-7. Merge and publish only after security testing and sign-off. Checkout is separately disabled.
-
-## Important
-The currently deployed app still uses older code; full verified intelligence remains available to signed-in free users for backward compatibility until the coordinated paywall rollout. Do not claim that production paywall enforcement is finished.
+## Nog te doen voordat betaaldabonnementen worden verkocht
+- Gebruik een echte testaccount/JWT om HTTP Data API, browserroutes, dashboard, abonnementsstatus en Edge Function te testen; SQL-rollensimulatie is niet gelijk aan een browser-end-to-endtest.
+- Test `assistant` ook expliciet voor actieve Premium-, gratis en administrator-gebruikers.
+- Controleer de concrete Lovable Preview UX van programma-detailpagina's en de prijzen in de browser.
+- Verifieer een **actuele** volledig herstelbare Lovable Cloud-back-up.
+- Activeer de checkout pas na aparte Stripe/webhook-implementatie, facturatie en verdere beveiligingstests.
+- SS-025 (#36) en SS-012 (#18) blijven open zolang die vervolgstappen niet zijn afgerond.
