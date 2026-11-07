@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.sanctions_programmes IS 'SS-025 programme catalogue';
