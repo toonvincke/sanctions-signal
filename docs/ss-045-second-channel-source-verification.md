@@ -61,3 +61,25 @@ For the 15 UN catalogue URLs: **6 original URLs** returned readable pages in the
 - For 9 UN original links, repeat verified direct HTTP test with a normal browser/network; only adopt an `/en/sanctions/` canonical link if redirected/recognized officially, and update source mapping with curator review.
 - Investigate network-specific OFAC response failures in the automated checker separately; do not disable health-checking or misclassify no-response as 'broken'.
 - Keep public legal summaries separate from live source status; review legal currency periodically.
+
+## Final browser follow-up: all nine UN URL redirects verified (7 Nov 2026)
+
+The isolated Lovable Staging agent performed **real headless Chromium navigation** for all nine previously unresolved original UN URLs and their `/en/sanctions/{id}` equivalents, plus the official [Security Council sanctions information index](https://main.un.org/securitycouncil/en/sanctions/information). Three concurrent pages, bounded 30-second navigation timeouts, no authentication, **no DB or code writes**.
+
+| Committee ID | Stored original URL browser path | Final official URL status | Official index |
+|---|---|---|---|
+| 2713 (Al-Shabaab) | 301 redirect to `/en/sanctions/2713` | 200, correct committee heading | linked |
+| 1533 (DR Congo) | 301 redirect to `/en/sanctions/1533` | 200, correct committee heading | linked |
+| 1591 (Sudan) | 301 redirect to `/en/sanctions/1591` | 200, correct committee heading | linked |
+| 1636 (Lebanon) | 301 redirect to `/en/sanctions/1636` | 200, correct committee heading | linked |
+| 1970 (Libya) | 301 redirect to `/en/sanctions/1970` | 200, correct committee heading | linked |
+| 2048 (Guinea-Bissau) | 301 redirect to `/en/sanctions/2048` | 200, correct committee heading | linked |
+| 2206 (South Sudan) | 301 redirect to `/en/sanctions/2206` | 200, correct committee heading | linked |
+| 2653 (Haiti) | 301 redirect to `/en/sanctions/2653` | 200, correct committee heading | linked |
+| 2745 (Central African Republic) | 301 redirect to `/en/sanctions/2745` | 200, correct committee heading | linked |
+
+Observed one browser console resource error on the UN Haiti page (`ERR_NAME_NOT_RESOLVED` for a secondary external resource); the committee page itself loaded and showed the correct heading. For 1533, the previous automated web 403 did **not** occur in Chromium.
+
+**Revised 96-URL catalogue evidence:** 59 initially returned HTTP 200 from staging's bounded checker; 22 OFAC + 6 UN exact URLs were retrieved by independent browsing; these nine remaining UN stored URLs now successfully redirect 301→200 in real Chromium. Therefore all **96/96 unique mapped URL targets have browser or HTTP retrieval evidence**. This does *not* establish that the staging cron checker will report `ok`, or validate the current legal effect of the cited documents. Its HTTP 202 and network-blocked statuses remain inconclusive until the checker is made compatible with publisher responses.
+
+**No canonical URL rewrite performed.** The nine stored URLs are officially indexed and work through the permanent redirect. A move to the `/en/` form is optional cleanup, not a required fix. Without proof that it resolves HTTP 202 from an automated client, avoid unnecessary edits and migrations. No source statuses, verification timestamps, production records, feature branches or deployments were changed by these browser tests.
