@@ -129,6 +129,51 @@ export type Database = {
         }
         Relationships: []
       }
+      editorial_publication_events: {
+        Row: {
+          action: string
+          actor_id: string
+          candidate_id: string
+          id: number
+          notes: string | null
+          occurred_at: string
+          record_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          candidate_id: string
+          id?: never
+          notes?: string | null
+          occurred_at?: string
+          record_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          candidate_id?: string
+          id?: never
+          notes?: string | null
+          occurred_at?: string
+          record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_publication_events_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editorial_publication_events_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intelligence_candidates: {
         Row: {
           ai_draft: Json | null
@@ -457,6 +502,114 @@ export type Database = {
         }
         Relationships: []
       }
+      official_document_source_rules: {
+        Row: {
+          created_at: string
+          document_type: string
+          enabled: boolean
+          id: string
+          programme_id: string
+          source_code: string
+          url_prefix: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          enabled?: boolean
+          id?: string
+          programme_id: string
+          source_code: string
+          url_prefix: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          enabled?: boolean
+          id?: string
+          programme_id?: string
+          source_code?: string
+          url_prefix?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "official_document_source_rules_programme_id_fkey"
+            columns: ["programme_id"]
+            isOneToOne: false
+            referencedRelation: "sanctions_programmes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "official_document_source_rules_source_code_fkey"
+            columns: ["source_code"]
+            isOneToOne: false
+            referencedRelation: "sanctions_sources"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      official_documents: {
+        Row: {
+          canonical_url: string
+          created_at: string
+          document_status: string | null
+          document_type: string
+          effective_date: string | null
+          id: string
+          issuing_authority: string | null
+          last_checked_at: string | null
+          link_check_error: string | null
+          link_check_status: string
+          publication_date: string | null
+          publication_state: string
+          published_at: string | null
+          source_code: string | null
+          title: string
+          updated_at: string
+          validated_at: string | null
+          withdrawn_at: string | null
+        }
+        Insert: {
+          canonical_url: string
+          created_at?: string
+          document_status?: string | null
+          document_type: string
+          effective_date?: string | null
+          id?: string
+          issuing_authority?: string | null
+          last_checked_at?: string | null
+          link_check_error?: string | null
+          link_check_status?: string
+          publication_date?: string | null
+          publication_state?: string
+          published_at?: string | null
+          source_code?: string | null
+          title: string
+          updated_at?: string
+          validated_at?: string | null
+          withdrawn_at?: string | null
+        }
+        Update: {
+          canonical_url?: string
+          created_at?: string
+          document_status?: string | null
+          document_type?: string
+          effective_date?: string | null
+          id?: string
+          issuing_authority?: string | null
+          last_checked_at?: string | null
+          link_check_error?: string | null
+          link_check_status?: string
+          publication_date?: string | null
+          publication_state?: string
+          published_at?: string | null
+          source_code?: string | null
+          title?: string
+          updated_at?: string
+          validated_at?: string | null
+          withdrawn_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -480,6 +633,66 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      programme_documents: {
+        Row: {
+          document_id: string
+          programme_id: string
+        }
+        Insert: {
+          document_id: string
+          programme_id: string
+        }
+        Update: {
+          document_id?: string
+          programme_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programme_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "official_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programme_documents_programme_id_fkey"
+            columns: ["programme_id"]
+            isOneToOne: false
+            referencedRelation: "sanctions_programmes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      programme_intelligence: {
+        Row: {
+          programme_id: string
+          record_id: string
+        }
+        Insert: {
+          programme_id: string
+          record_id: string
+        }
+        Update: {
+          programme_id?: string
+          record_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programme_intelligence_programme_id_fkey"
+            columns: ["programme_id"]
+            isOneToOne: false
+            referencedRelation: "sanctions_programmes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programme_intelligence_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_records"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       programme_premium_sections: {
         Row: {
@@ -731,6 +944,54 @@ export type Database = {
         }
         Relationships: []
       }
+      sanctions_programmes: {
+        Row: {
+          created_at: string
+          group_name: string | null
+          id: string
+          jurisdiction: string
+          name: string
+          official_programme_label: string | null
+          official_programme_source: string | null
+          official_programme_url: string | null
+          slug: string
+          source_check_note: string | null
+          source_last_checked_at: string | null
+          source_mapping_status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          group_name?: string | null
+          id?: string
+          jurisdiction: string
+          name: string
+          official_programme_label?: string | null
+          official_programme_source?: string | null
+          official_programme_url?: string | null
+          slug: string
+          source_check_note?: string | null
+          source_last_checked_at?: string | null
+          source_mapping_status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          group_name?: string | null
+          id?: string
+          jurisdiction?: string
+          name?: string
+          official_programme_label?: string | null
+          official_programme_source?: string | null
+          official_programme_url?: string | null
+          slug?: string
+          source_check_note?: string | null
+          source_last_checked_at?: string | null
+          source_mapping_status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sanctions_sources: {
         Row: {
           code: string
@@ -841,6 +1102,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      finalize_intelligence_candidate: {
+        Args: {
+          p_actor: string
+          p_candidate_id: string
+          p_decision: string
+          p_notes?: string
+          p_record?: Json
+        }
+        Returns: Json
+      }
       finalize_sanctions_import: {
         Args: {
           p_content_hash: string
@@ -855,6 +1126,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      publish_official_document: {
+        Args: {
+          p_date: string
+          p_issuer: string
+          p_rule_id: string
+          p_title: string
+          p_url: string
+        }
+        Returns: string
       }
     }
     Enums: {
