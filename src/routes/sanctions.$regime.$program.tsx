@@ -97,11 +97,6 @@ function ProgrammePage() {
           </div>
           <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
             <div className="border bg-card p-5">
-              <h2 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Source verification</h2>
-              <p className="mt-3 text-sm font-medium">Not yet verified at programme level</p>
-              <p className="mt-1 text-xs text-muted-foreground">Last checked: not recorded. The publication date is not a source-verification date.</p>
-            </div>
-            <div className="border bg-card p-5">
               <h2 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Official reference sources</h2>
               <p className="my-3 text-xs text-muted-foreground">Jurisdiction-level official entry points; not direct citations establishing every measure above.</p>
               <ul className="space-y-3 text-sm">
