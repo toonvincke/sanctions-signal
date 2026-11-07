@@ -20,6 +20,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedBookmarksRouteImport } from './routes/_authenticated/bookmarks'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedEditorialRouteImport } from './routes/_authenticated/editorial'
 import { Route as AuthenticatedExplorerRouteImport } from './routes/_authenticated/explorer'
 import { Route as SanctionsRegimeRouteImport } from './routes/sanctions.$regime'
 import { Route as SanctionsInternationalRouteImport } from './routes/sanctions.international'
@@ -81,6 +82,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEditorialRoute = AuthenticatedEditorialRouteImport.update({
+  id: '/editorial',
+  path: '/editorial',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedExplorerRoute = AuthenticatedExplorerRouteImport.update({
   id: '/explorer',
   path: '/explorer',
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/editorial': typeof AuthenticatedEditorialRoute
   '/explorer': typeof AuthenticatedExplorerRoute
   '/sanctions/$regime': typeof SanctionsRegimeRouteWithChildren
   '/sanctions/international': typeof SanctionsInternationalRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/editorial': typeof AuthenticatedEditorialRoute
   '/explorer': typeof AuthenticatedExplorerRoute
   '/sanctions/international': typeof SanctionsInternationalRoute
   '/records/$slug': typeof AuthenticatedRecordsSlugRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/bookmarks': typeof AuthenticatedBookmarksRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/editorial': typeof AuthenticatedEditorialRoute
   '/_authenticated/explorer': typeof AuthenticatedExplorerRoute
   '/sanctions/$regime': typeof SanctionsRegimeRouteWithChildren
   '/sanctions/international': typeof SanctionsInternationalRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/bookmarks'
     | '/dashboard'
+    | '/editorial'
     | '/explorer'
     | '/sanctions/$regime'
     | '/sanctions/international'
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/bookmarks'
     | '/dashboard'
+    | '/editorial'
     | '/explorer'
     | '/sanctions/international'
     | '/records/$slug'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/bookmarks'
     | '/_authenticated/dashboard'
+    | '/_authenticated/editorial'
     | '/_authenticated/explorer'
     | '/sanctions/$regime'
     | '/sanctions/international'
@@ -317,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/editorial': {
+      id: '/_authenticated/editorial'
+      path: '/editorial'
+      fullPath: '/editorial'
+      preLoaderRoute: typeof AuthenticatedEditorialRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/explorer': {
       id: '/_authenticated/explorer'
       path: '/explorer'
@@ -366,6 +385,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedBookmarksRoute: typeof AuthenticatedBookmarksRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEditorialRoute: typeof AuthenticatedEditorialRoute
   AuthenticatedExplorerRoute: typeof AuthenticatedExplorerRoute
   AuthenticatedRecordsSlugRoute: typeof AuthenticatedRecordsSlugRoute
 }
@@ -374,6 +394,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedBookmarksRoute: AuthenticatedBookmarksRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEditorialRoute: AuthenticatedEditorialRoute,
   AuthenticatedExplorerRoute: AuthenticatedExplorerRoute,
   AuthenticatedRecordsSlugRoute: AuthenticatedRecordsSlugRoute,
 }
@@ -410,3 +431,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
