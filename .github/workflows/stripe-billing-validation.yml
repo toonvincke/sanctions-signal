@@ -1,0 +1,28 @@
+name: Stripe billing validation
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/stripe-*"
+      - "src/lib/subscription-plans*"
+      - "src/routes/pricing.tsx"
+      - ".github/workflows/stripe-billing-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stripe-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run Stripe unit tests
+        run: npx vitest run src/lib/stripe-billing-config.test.ts src/lib/stripe-api.server.test.ts src/lib/stripe-webhook.server.test.ts src/lib/subscription-plans.test.ts
