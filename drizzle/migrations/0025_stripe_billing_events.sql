@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION public.apply_stripe_subscription_event(
 ) RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
-DECLARE did_insert boolean;
+DECLARE inserted_count integer;
 BEGIN
   IF p_event_id !~ '^evt_[a-zA-Z0-9]+$'
      OR p_customer_id !~ '^cus_[a-zA-Z0-9]+$'
@@ -34,8 +34,8 @@ BEGIN
   END IF;
   INSERT INTO private.stripe_processed_events (event_id) VALUES (p_event_id)
     ON CONFLICT DO NOTHING;
-  GET DIAGNOSTICS did_insert = ROW_COUNT;
-  IF NOT did_insert THEN RETURN false; END IF;
+  GET DIAGNOSTICS inserted_count = ROW_COUNT;
+  IF inserted_count = 0 THEN RETURN false; END IF;
 
   -- Refuse reassignment of a Stripe customer/subscription to another user.
   IF EXISTS (
