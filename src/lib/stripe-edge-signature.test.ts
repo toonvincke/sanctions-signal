@@ -1,8 +1,9 @@
-// @vitest-environment node
-import { createHmac } from "node:crypto";
-import { describe, expect, it } from "vitest";
+import { createHmac, webcrypto } from "node:crypto";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { verifyStripeSignature } from "../../supabase/functions/_shared/stripe-signature";
 
+beforeAll(() => vi.stubGlobal("crypto", webcrypto));
+afterAll(() => vi.unstubAllGlobals());
 const secret = "whsec_fixture";
 const now = 1_794_136_800_000;
 const raw = JSON.stringify({ id: "evt_test123", type: "customer.subscription.updated", livemode: false });
