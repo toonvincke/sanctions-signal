@@ -42,12 +42,16 @@ export function parseUnConsolidated(source: SanctionsSource, xml: string): Sanct
   const personNodes = children(root.INDIVIDUALS, "INDIVIDUAL");
   const entityNodes = children(root.ENTITIES, "ENTITY");
   for (const [nodes, individual] of [[personNodes, true], [entityNodes, false]] as const) {
-    for (const node of nodes) {
+    for (const [index, node] of nodes.entries()) {
       const id = field(node, individual ? "INDIVIDUAL_ID" : "ENTITY_ID") || field(node, "REFERENCE_NUMBER");
       const name = individual
         ? ["FIRST_NAME", "SECOND_NAME", "THIRD_NAME", "FOURTH_NAME"].map((k) => field(node, k)).filter(Boolean).join(" ")
         : field(node, "ENTITY_NAME");
-      if (!id || !name) throw new Error("UN designation missing ID or name; refusing incomplete snapshot");
+      if (!id || !name) {
+        const kind = individual ? "individual" : "entity";
+        const missing = [!id ? "ID" : "", !name ? "name" : ""].filter(Boolean).join(" and ");
+        throw new Error(`UN ${kind} record ${index + 1} missing ${missing}; refusing incomplete snapshot`);
+      }
       const aliases = children(node, individual ? "INDIVIDUAL_ALIAS" : "ENTITY_ALIAS")
         .map((alias) => field(alias, "ALIAS_NAME")).filter(Boolean);
       const nationality = children(node, "NATIONALITY").map((n) => field(n, "VALUE")).filter(Boolean);
