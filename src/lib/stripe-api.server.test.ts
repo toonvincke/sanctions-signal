@@ -10,7 +10,7 @@ const config = readStripeBillingConfig({
 });
 describe("Stripe API in test mode", () => {
   it("creates monthly and annual checkout using only server-selected prices", async () => {
-    const http = vi.fn(async () => new Response(JSON.stringify({ livemode: false, url: "https://checkout.stripe.com/c/pay/test" }), { status: 200 }));
+    const http = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ livemode: false, url: "https://checkout.stripe.com/c/pay/test" }), { status: 200 }));
     for (const [interval, expected] of [["monthly", "price_month"], ["annual", "price_year"]] as const) {
       await createPremiumCheckout(config, { interval, authenticatedUserId: "user_1", verifiedAppOrigin: "https://sanctions.example" }, http as typeof fetch);
       const body = new URLSearchParams(http.mock.lastCall![1]!.body as string);
@@ -26,7 +26,7 @@ describe("Stripe API in test mode", () => {
     expect(http).not.toHaveBeenCalled();
   });
   it("only allows server-resolved customer portal IDs and test redirects", async () => {
-    const http = vi.fn(async () => new Response(JSON.stringify({ livemode: false, url: "https://billing.stripe.com/p/session/test" }), { status: 200 }));
+    const http = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ livemode: false, url: "https://billing.stripe.com/p/session/test" }), { status: 200 }));
     await expect(createBillingPortal(config, "forged", "https://sanctions.example", http as typeof fetch)).rejects.toThrow(/customer/);
     expect(await createBillingPortal(config, "cus_123", "https://sanctions.example", http as typeof fetch)).toContain("billing.stripe.com");
   });

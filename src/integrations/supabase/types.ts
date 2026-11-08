@@ -1102,6 +1102,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_stripe_subscription_event: {
+        Args: {
+          p_cancel_at_period_end: boolean
+          p_customer_id: string
+          p_event_id: string
+          p_period_end: string
+          p_plan: string
+          p_status: string
+          p_subscription_id: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       finalize_intelligence_candidate: {
         Args: {
           p_actor: string
