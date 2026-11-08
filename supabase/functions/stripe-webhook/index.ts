@@ -7,7 +7,7 @@ const accepted = new Set(["checkout.session.completed", "customer.subscription.c
 Deno.serve(async (req) => {
   if (req.method !== "POST") return response({ error: "Method not allowed" }, 405);
   let config: ReturnType<typeof billingEnv>;
-  try { config = billingEnv(); } catch { return response({ error: "Billing is not configured" }, 503); }
+  try { config = billingEnv(false); } catch { return response({ error: "Billing is not configured" }, 503); }
   const secret = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
   const raw = await req.text();
   if (!(await verifyStripeSignature(raw, req.headers.get("stripe-signature"), secret))) {
