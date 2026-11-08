@@ -8,7 +8,7 @@ export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
       { title: "Pricing — Lexsanction" },
-      { name: "description", content: "Explore free sanctions overviews and Premium sanctions intelligence plans from €25 per month." },
+      { name: "description", content: "Explore free sanctions overviews and one Premium subscription with monthly or annual billing." },
       { property: "og:title", content: "Pricing — Lexsanction" },
     ],
   }),
@@ -29,12 +29,6 @@ const premiumFeatures = [
   "Published case law and enforcement intelligence",
   "Programme-specific updates and detailed analysis",
 ];
-const teamFeatures = [
-  "Multiple seats and organisation billing",
-  "Central account management (planned)",
-  "Team-oriented features as they become available",
-];
-
 function Pricing() {
   const [annual, setAnnual] = useState(true);
   return (
@@ -53,7 +47,7 @@ function Pricing() {
           </div>
           <span className="text-sm font-medium text-success">Save {annualSavings()}% with annual billing</span>
         </div>
-        <div className="mt-8 grid gap-6 lg:grid-cols-3">
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
           <section className="flex flex-col border bg-card p-7">
             <h2 className="font-serif text-2xl">Free</h2>
             <p className="mt-2 text-sm text-muted-foreground">Discover the coverage.</p>
@@ -75,18 +69,8 @@ function Pricing() {
             <Link to="/contact" className="block bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90">Enquire about Premium</Link>
             <p className="mt-3 flex items-center justify-center gap-1 text-center text-xs text-muted-foreground"><LockKeyhole className="h-3.5 w-3.5" /> Checkout coming soon — no payment is taken.</p>
           </section>
-          <section className="flex flex-col border bg-card p-7">
-            <h2 className="font-serif text-2xl">Team & Enterprise</h2>
-            <p className="mt-2 text-sm text-muted-foreground">For firms and compliance departments.</p>
-            <p className="mt-7 font-serif text-3xl">Custom pricing</p>
-            <p className="mt-3 text-xs text-muted-foreground">Contact us to discuss your needs</p>
-            <ul className="my-8 flex-1 space-y-3 text-sm">
-              {teamFeatures.map((feature) => <li key={feature} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />{feature}</li>)}
-            </ul>
-            <Link to="/contact" className="block border px-4 py-3 text-center text-sm font-medium hover:bg-secondary">Contact sales</Link>
-          </section>
         </div>
-        <p className="mt-5 text-xs text-muted-foreground">All prices exclude applicable VAT. Premium content and the daily digest are being rolled out; checkout is not yet available. Sanctions Signal provides information, not legal advice or sanctions screening.</p>
+        <p className="mt-5 text-xs text-muted-foreground">Displayed prices are provisional and exclude applicable VAT. Premium content and the daily digest are being rolled out; checkout is not yet available. Sanctions Signal provides information, not legal advice or sanctions screening.</p>
         <div className="mt-16 max-w-3xl space-y-5 border-t pt-10">
           <h2 className="font-serif text-3xl">Frequently asked questions</h2>
           <div><h3 className="font-medium">What is free?</h3><p className="mt-1 text-sm text-muted-foreground">Programme overviews, general scope information and public updates remain accessible without payment.</p></div>

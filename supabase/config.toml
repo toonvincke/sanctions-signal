@@ -13,3 +13,7 @@ verify_jwt = false
 # Dedicated cron-bearer authentication is enforced inside this endpoint.
 [functions.official-source-check]
 verify_jwt = false
+
+# Stripe signs webhook requests itself; verify raw-body signature in the handler.
+[functions.stripe-webhook]
+verify_jwt = false
