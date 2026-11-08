@@ -18,11 +18,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "22"
-          cache: npm
+          bun-version: "1.3.3"
       - name: Install locked dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
       - name: Run Stripe unit tests
-        run: npx vitest run src/lib/stripe-billing-config.test.ts src/lib/stripe-api.server.test.ts src/lib/stripe-webhook.server.test.ts src/lib/subscription-plans.test.ts
+        run: bunx vitest run src/lib/stripe-billing-config.test.ts src/lib/stripe-api.server.test.ts src/lib/stripe-webhook.server.test.ts src/lib/subscription-plans.test.ts
