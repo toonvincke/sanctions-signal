@@ -5,7 +5,7 @@ on:
     paths:
       - "src/lib/stripe-*"
       - "src/lib/subscription-plans*"
-      - "src/routes/pricing.tsx"
+      - "src/routes/pricing.tsx"\n      - "supabase/functions/**"\n      - "drizzle/migrations/0025_stripe_billing_events.sql"
       - ".github/workflows/stripe-billing-validation.yml"
   workflow_dispatch:
 
@@ -24,4 +24,4 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
       - name: Run Stripe unit tests
-        run: bunx vitest run src/lib/stripe-billing-config.test.ts src/lib/stripe-api.server.test.ts src/lib/stripe-webhook.server.test.ts src/lib/subscription-plans.test.ts
+        run: bunx vitest run src/lib/stripe-billing-config.test.ts src/lib/stripe-api.server.test.ts src/lib/stripe-webhook.server.test.ts src/lib/subscription-plans.test.ts supabase/functions/_shared/stripe-signature.test.ts
