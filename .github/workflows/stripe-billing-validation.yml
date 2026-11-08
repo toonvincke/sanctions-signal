@@ -5,7 +5,9 @@ on:
     paths:
       - "src/lib/stripe-*"
       - "src/lib/subscription-plans*"
-      - "src/routes/pricing.tsx"\n      - "supabase/functions/**"\n      - "drizzle/migrations/0025_stripe_billing_events.sql"
+      - "src/routes/pricing.tsx"
+      - "supabase/functions/**"
+      - "drizzle/migrations/0025_stripe_billing_events.sql"
       - ".github/workflows/stripe-billing-validation.yml"
   workflow_dispatch:
 
