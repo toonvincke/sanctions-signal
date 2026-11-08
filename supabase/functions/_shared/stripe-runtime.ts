@@ -16,7 +16,7 @@ export function billingEnv() {
 }
 export function corsHeaders(req: Request, appOrigin: string): HeadersInit {
   const origin = req.headers.get("origin");
-  return origin === appOrigin ? { "Access-Control-Allow-Origin": appOrigin, "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS", "Vary": "Origin" } : { "Vary": "Origin" };
+  return origin === appOrigin ? { "Access-Control-Allow-Origin": appOrigin, "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS", "Vary": "Origin" } : { "Vary": "Origin" };
 }
 export function response(body: unknown, status = 200, headers: HeadersInit = {}): Response {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store", ...headers } });
