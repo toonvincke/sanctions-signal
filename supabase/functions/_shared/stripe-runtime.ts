@@ -1,16 +1,18 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-export function billingEnv() {
+export function billingEnv(requireAppOrigin = true) {
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const appOrigin = Deno.env.get("STRIPE_APP_ORIGIN") ?? "";
-  if (!stripeKey.startsWith("sk_test_") || !supabaseUrl || !serviceKey || !appOrigin) {
+  if (!stripeKey.startsWith("sk_test_") || !supabaseUrl || !serviceKey || (requireAppOrigin && !appOrigin)) {
     throw new Error("Stripe test-mode billing is not configured");
   }
-  const parsed = new URL(appOrigin);
-  if (parsed.origin !== appOrigin || (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && parsed.hostname === "localhost"))) {
-    throw new Error("Invalid trusted application origin");
+  if (requireAppOrigin) {
+    const parsed = new URL(appOrigin);
+    if (parsed.origin !== appOrigin || (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && parsed.hostname === "localhost"))) {
+      throw new Error("Invalid trusted application origin");
+    }
   }
   return { stripeKey, appOrigin, admin: createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } }) };
 }
