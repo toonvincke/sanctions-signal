@@ -5,7 +5,7 @@ export function verifyStripeWebhook(raw: string, signatureHeader: string | null,
   if (!secret.startsWith("whsec_") || !signatureHeader) throw new Error("Missing webhook signature configuration");
   const entries = signatureHeader.split(",").map((value) => value.trim().split("="));
   const timestampValue = entries.find(([key]) => key === "t")?.[1];
-  const signatures = entries.filter(([key]) => key === "v1").map(([, value]) => value);
+  const signatures = entries.filter(([key]) => key === "v1").map(([, value]) => value ?? "");
   if (!timestampValue || !/^\d+$/.test(timestampValue) || signatures.length === 0) throw new Error("Invalid Stripe signature header");
   const timestamp = Number(timestampValue);
   if (!Number.isSafeInteger(timestamp) || Math.abs(nowSeconds - timestamp) > 300) throw new Error("Stripe webhook timestamp outside tolerance");
