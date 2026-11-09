@@ -7,11 +7,6 @@ on:
       - "supabase/functions/stripe-webhook/**"
       - "supabase/functions/_shared/stripe-signature.ts"
   workflow_dispatch:
-  push:
-    branches:
-      - test/stripe-webhook-smoke-20261109
-    paths:
-      - ".github/workflows/stripe-webhook-smoke.yml"
 
 permissions:
   contents: read
@@ -49,7 +44,7 @@ jobs:
 
   signed-delivery:
     # Only run on trusted manual dispatch, never untrusted pull request code.
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'toonvincke/sanctions-signal' && github.head_ref == 'test/stripe-webhook-smoke-20261109')
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
