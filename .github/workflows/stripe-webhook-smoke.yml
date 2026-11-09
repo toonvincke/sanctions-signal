@@ -1,0 +1,43 @@
+name: Stripe webhook deployed endpoint smoke test
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/stripe-webhook-smoke.yml"
+      - "supabase/functions/stripe-webhook/**"
+      - "supabase/functions/_shared/stripe-signature.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reject-unsigned-requests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Confirm deployed endpoint rejects unsigned and forged signatures
+        env:
+          WEBHOOK_URL: https://zaxndzgkadanpctumyem.supabase.co/functions/v1/stripe-webhook
+        shell: bash
+        run: |
+          set -euo pipefail
+          body='{"id":"evt_smoketest123","object":"event","type":"invoice.paid"}'
+          check() {
+            local label="$1" expected="$2"
+            shift 2
+            local response http
+            response=$(mktemp)
+            http=$(curl --silent --show-error --max-time 20 --output "$response" --write-out '%{http_code}' -X POST "$WEBHOOK_URL" -H 'Content-Type: application/json' "$@" --data "$body")
+            echo "$label: HTTP $http (expected $expected)"
+            if [[ "$http" != "$expected" ]]; then
+              echo "::error::$label returned HTTP $http, expected $expected"
+              cat "$response"
+              rm -f "$response"
+              exit 1
+            fi
+            rm -f "$response"
+          }
+          check "Missing Stripe signature" 400
+          check "Forged Stripe signature" 400 -H 'Stripe-Signature: t=1700000000,v1=0000000000000000000000000000000000000000000000000000000000000000'
+          echo "Webhook correctly rejects unsigned and forged requests."
