@@ -4,10 +4,10 @@ import { SiteLayout } from "@/components/site/SiteChrome";
 export const Route = createFileRoute("/features")({
   head: () => ({
     meta: [
-      { title: "Features — Lexsanction" },
+      { title: "Features — Sanctione Compass" },
       { name: "description", content: "Intelligence Explorer, faceted search, structured enforcement and case-law records, and bookmarks." },
-      { property: "og:title", content: "Features — Lexsanction" },
-      { property: "og:description", content: "What the Lexsanction sanctions intelligence platform does today and what is coming next." },
+      { property: "og:title", content: "Features — Sanctione Compass" },
+      { property: "og:description", content: "What the Sanctione Compass sanctions intelligence platform does today and what is coming next." },
     ],
   }),
   component: Features,
