@@ -4,7 +4,7 @@ import { bookmarksQuery } from "@/lib/intel";
 import { RecordTable } from "@/components/intel/RecordTable";
 
 export const Route = createFileRoute("/_authenticated/bookmarks")({
-  head: () => ({ meta: [{ title: "Bookmarks — Lexsanction" }, { name: "description", content: "Your saved intelligence records." }] }),
+  head: () => ({ meta: [{ title: "Bookmarks — Sanctions Signal" }, { name: "description", content: "Your saved intelligence records." }] }),
   loader: ({ context }) => context.queryClient.ensureQueryData(bookmarksQuery),
   component: Bookmarks,
 });
