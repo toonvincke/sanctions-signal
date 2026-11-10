@@ -5,7 +5,7 @@ import { useSession } from "@/hooks/use-session";
 export function Logo() {
   return (
     <Link to="/" className="flex items-baseline gap-2">
-      <span className="font-serif text-xl font-semibold tracking-tight">Sanctione Compass</span>
+      <span className="font-serif text-xl font-semibold tracking-tight">Sanctions Signal</span>
       <span className="font-mono text-[10px] uppercase tracking-widest opacity-70">Intelligence</span>
     </Link>
   );
