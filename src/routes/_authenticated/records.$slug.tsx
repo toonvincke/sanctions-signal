@@ -8,7 +8,7 @@ import { bookmarksQuery, formatDate, formatMoney, LEGAL_STATUS_LABELS, recordQue
 import { TypeBadge, VerificationBadge } from "@/components/intel/badges";
 
 export const Route = createFileRoute("/_authenticated/records/$slug")({
-  head: () => ({ meta: [{ title: "Intelligence record — Lexsanction" }] }),
+  head: () => ({ meta: [{ title: "Intelligence record — Sanctions Signal" }] }),
   component: RecordAccessPage,
 });
 
