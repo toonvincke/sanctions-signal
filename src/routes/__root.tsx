@@ -80,7 +80,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Sanctione Compass — Sanctions Intelligence" },
+      { title: "Sanctions Signal — Sanctions Intelligence" },
       { name: "description", content: "Sanctions intelligence and regulatory research for compliance teams." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
