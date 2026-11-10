@@ -1,4 +1,4 @@
-# Sanctions Signal
+# Sanctione Compass
 
 Build Milestone 1 of the Sanctions Intelligence SaaS Platform according to the attached specification:
 
