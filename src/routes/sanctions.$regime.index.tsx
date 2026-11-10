@@ -9,8 +9,8 @@ const regimeRoute = getRouteApi("/sanctions/$regime");
 export const Route = createFileRoute("/sanctions/$regime/")({
   head: ({ params }) => {
     const r = REGIMES[params.regime as RegimeSlug] as (typeof REGIMES)[RegimeSlug] | undefined;
-    if (!r) return { meta: [{ title: "Sanctions programmes — Lexsanction" }] };
-    const title = `${r.label} — programme overview | Lexsanction`;
+    if (!r) return { meta: [{ title: "Sanctions programmes — Sanctions Signal" }] };
+    const title = `${r.label} — programme overview | Sanctions Signal`;
     const description = `Overview of ${r.title.toLowerCase()}: legal basis, scope and responsible authorities, with links to the official lists.`;
     return {
       meta: [
