@@ -6,13 +6,13 @@ import { PHOTOS } from "@/lib/sanctions-programs";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Sanctione Compass — Sanctions intelligence for compliance teams" },
+      { title: "Sanctions Signal — Sanctions intelligence for compliance teams" },
       {
         name: "description",
         content:
           "Searchable, source-linked intelligence on sanctions developments, case law, enforcement actions and regulatory guidance across the EU, UK and US.",
       },
-      { property: "og:title", content: "Sanctione Compass — Sanctions intelligence for compliance teams" },
+      { property: "og:title", content: "Sanctions Signal — Sanctions intelligence for compliance teams" },
       {
         property: "og:description",
         content: "Source-linked sanctions intelligence: developments, judgments, enforcement and guidance.",
@@ -62,7 +62,7 @@ function Landing() {
               Scattered regulatory signals, turned into intelligence you can cite.
             </h1>
             <p className="mt-6 max-w-xl text-lg text-navy-muted">
-              Sanctione Compass monitors UN, EU, UK, US and national authorities and courts, and delivers concise, original
+              Sanctions Signal monitors UN, EU, UK, US and national authorities and courts, and delivers concise, original
               analysis — every record traceable to its primary source, with facts and implications kept strictly apart.
             </p>
             <div className="mt-8 flex gap-3">
