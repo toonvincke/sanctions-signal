@@ -14,8 +14,8 @@ export const Route = createFileRoute("/sanctions/$regime/$program")({
   },
   head: ({ loaderData }) => {
     const detail = loaderData && getProgrammeDetail(loaderData.jurisdiction, loaderData.slug);
-    if (!detail) return { meta: [{ title: "Programme not found | Lexsanction" }] };
-    const title = `${detail.programme.name} — ${REGIMES[detail.jurisdiction].label} | Lexsanction`;
+    if (!detail) return { meta: [{ title: "Programme not found | Sanctions Signal" }] };
+    const title = `${detail.programme.name} — ${REGIMES[detail.jurisdiction].label} | Sanctions Signal`;
     const description = `Overview of ${detail.programme.name}: measures, legal framework and official sources.`;
     return { meta: [
       { title },
