@@ -41,7 +41,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen">
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
         <Link to="/" className="px-5 py-5">
-          <div className="font-serif text-lg font-semibold text-sidebar-primary">Lexsanction</div>
+          <div className="font-serif text-lg font-semibold text-sidebar-primary">Sanctions Signal</div>
           <div className="font-mono text-[10px] uppercase tracking-widest text-sidebar-foreground/60">Intelligence portal</div>
         </Link>
         <nav className="flex flex-col gap-0.5 px-2">
@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b bg-card px-4 py-3 md:hidden">
-          <span className="font-serif font-semibold">Lexsanction</span>
+          <span className="font-serif font-semibold">Sanctions Signal</span>
           <div className="flex gap-4 text-sm">
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/explorer">Explorer</Link>
