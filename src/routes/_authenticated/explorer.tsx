@@ -19,7 +19,7 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/explorer")({
   validateSearch: searchSchema,
-  head: () => ({ meta: [{ title: "Intelligence Explorer — Lexsanction" }, { name: "description", content: "Search and filter sanctions intelligence." }] }),
+  head: () => ({ meta: [{ title: "Intelligence Explorer — Sanctions Signal" }, { name: "description", content: "Search and filter sanctions intelligence." }] }),
   loader: ({ context }) => context.queryClient.ensureQueryData(facetsQuery),
   component: Explorer,
 });

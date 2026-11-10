@@ -14,8 +14,8 @@ import { Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
     meta: [
-      { title: "Account — Lexsanction" },
-      { name: "description", content: "Manage your Lexsanction profile and password." },
+      { title: "Account — Sanctions Signal" },
+      { name: "description", content: "Manage your Sanctions Signal profile and password." },
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(accountQuery),

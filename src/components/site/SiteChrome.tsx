@@ -5,7 +5,7 @@ import { useSession } from "@/hooks/use-session";
 export function Logo() {
   return (
     <Link to="/" className="flex items-baseline gap-2">
-      <span className="font-serif text-xl font-semibold tracking-tight">Lexsanction</span>
+      <span className="font-serif text-xl font-semibold tracking-tight">Sanctions Signal</span>
       <span className="font-mono text-[10px] uppercase tracking-widest opacity-70">Intelligence</span>
     </Link>
   );
@@ -98,10 +98,16 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             </p>
           </div>
           <div className="flex flex-col gap-2">
-            {SANCTIONS_NAV.map((n) => (
-              <Link key={n.label} to={n.to} params={n.params as never} className="hover:text-navy-foreground">
-                {n.label}
-              </Link>
+            <span className="font-semibold text-navy-foreground">Legal</span>
+            {[
+              ["terms", "Terms & Conditions"],
+              ["privacy", "Privacy Policy"],
+              ["cookies", "Cookie Policy"],
+              ["subscriptions", "Subscriptions & Cancellation"],
+              ["legal-notice", "Legal Notice"],
+              ["disclaimer", "Disclaimer"],
+            ].map(([slug, label]) => (
+              <Link key={slug} to="/legal/$document" params={{ document: slug }} className="hover:text-navy-foreground">{label}</Link>
             ))}
           </div>
           <div className="flex flex-col gap-2">

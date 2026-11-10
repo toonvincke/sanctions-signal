@@ -3,7 +3,7 @@ import { SiteLayout } from "@/components/site/SiteChrome";
 import { RegimeHero, SourceBox } from "@/components/site/RegimeHero";
 import { COUNTRIES, INTERNATIONAL } from "@/lib/sanctions-programs";
 
-const TITLE = "International sanctions — national frameworks | Lexsanction";
+const TITLE = "International sanctions — national frameworks | Sanctions Signal";
 const DESC =
   "Sanctions laws and authorities in France, the Netherlands, Germany, Italy, Czech Republic, Bulgaria, Hungary, Slovakia, Hong Kong, Singapore and China.";
 

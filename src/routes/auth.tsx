@@ -16,10 +16,10 @@ export const Route = createFileRoute("/auth")({
   validateSearch: z.object({ mode: z.enum(["signin", "signup", "forgot"]).optional() }),
   head: () => ({
     meta: [
-      { title: "Sign in — Lexsanction" },
-      { name: "description", content: "Sign in or create a Lexsanction account." },
-      { property: "og:title", content: "Sign in — Lexsanction" },
-      { property: "og:description", content: "Access the Lexsanction sanctions intelligence portal." },
+      { title: "Sign in — Sanctions Signal" },
+      { name: "description", content: "Sign in or create a Sanctions Signal account." },
+      { property: "og:title", content: "Sign in — Sanctions Signal" },
+      { property: "og:description", content: "Access the Sanctions Signal sanctions intelligence portal." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

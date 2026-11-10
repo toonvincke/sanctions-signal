@@ -7,9 +7,9 @@ import { PREMIUM_PRICING, annualSavings } from "@/lib/subscription-plans";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — Lexsanction" },
+      { title: "Pricing — Sanctions Signal" },
       { name: "description", content: "Explore free sanctions overviews and one Premium subscription with monthly or annual billing." },
-      { property: "og:title", content: "Pricing — Lexsanction" },
+      { property: "og:title", content: "Pricing — Sanctions Signal" },
     ],
   }),
   component: Pricing,

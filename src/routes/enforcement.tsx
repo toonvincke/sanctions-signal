@@ -4,7 +4,7 @@ import { SiteLayout } from "@/components/site/SiteChrome";
 import { RegimeHero } from "@/components/site/RegimeHero";
 import { ENFORCEMENT_AUTHORITIES, PHOTOS, TYPOLOGIES } from "@/lib/sanctions-programs";
 
-const TITLE = "Sanctions enforcement actions & penalties | Lexsanction";
+const TITLE = "Sanctions enforcement actions & penalties | Sanctions Signal";
 const DESC =
   "How OFAC, BIS, DOJ, OFSI, OTSI, HMRC and EU member-state authorities enforce sanctions — and the circumvention typologies behind recent penalties.";
 
@@ -28,7 +28,7 @@ function Enforcement() {
       <RegimeHero
         eyebrow="Enforcement actions"
         title="Who enforces sanctions — and how"
-        intro="Settlements, penalty notices, criminal convictions and allegations carry very different legal weight. Lexsanction records each enforcement action with its exact legal status, the control failures identified and the circumvention method used."
+        intro="Settlements, penalty notices, criminal convictions and allegations carry very different legal weight. Sanctions Signal records each enforcement action with its exact legal status, the control failures identified and the circumvention method used."
         photo={PHOTOS.us}
       />
       <div className="mx-auto max-w-6xl space-y-14 px-6 py-14">

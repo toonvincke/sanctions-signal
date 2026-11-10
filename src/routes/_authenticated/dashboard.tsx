@@ -6,7 +6,7 @@ import { RecordTable } from "@/components/intel/RecordTable";
 import { TypeBadge } from "@/components/intel/badges";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Lexsanction" }, { name: "description", content: "Recent sanctions developments and priority alerts." }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Sanctions Signal" }, { name: "description", content: "Recent sanctions developments and priority alerts." }] }),
   loader: ({ context }) => context.queryClient.ensureQueryData(recordsQuery({})),
   component: Dashboard,
 });

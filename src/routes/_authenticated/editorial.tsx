@@ -10,7 +10,7 @@ type Candidate = {
 
 export const Route = createFileRoute("/_authenticated/editorial")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Editorial review — Lexsanction" }, { name: "robots", content: "noindex,nofollow" }] }),
+  head: () => ({ meta: [{ title: "Editorial review — Sanctions Signal" }, { name: "robots", content: "noindex,nofollow" }] }),
   component: EditorialQueue,
 });
 

@@ -11,10 +11,10 @@ import { friendlyAuthError } from "@/lib/auth-errors";
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
-      { title: "Set a new password — Lexsanction" },
-      { name: "description", content: "Choose a new password for your Lexsanction account." },
-      { property: "og:title", content: "Set a new password — Lexsanction" },
-      { property: "og:description", content: "Choose a new password for your Lexsanction account." },
+      { title: "Set a new password — Sanctions Signal" },
+      { name: "description", content: "Choose a new password for your Sanctions Signal account." },
+      { property: "og:title", content: "Set a new password — Sanctions Signal" },
+      { property: "og:description", content: "Choose a new password for your Sanctions Signal account." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
