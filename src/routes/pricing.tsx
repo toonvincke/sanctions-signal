@@ -7,9 +7,9 @@ import { PREMIUM_PRICING, annualSavings } from "@/lib/subscription-plans";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — Sanctione Compass" },
+      { title: "Pricing — Sanctions Signal" },
       { name: "description", content: "Explore free sanctions overviews and one Premium subscription with monthly or annual billing." },
-      { property: "og:title", content: "Pricing — Sanctione Compass" },
+      { property: "og:title", content: "Pricing — Sanctions Signal" },
     ],
   }),
   component: Pricing,
@@ -70,13 +70,13 @@ function Pricing() {
             <p className="mt-3 flex items-center justify-center gap-1 text-center text-xs text-muted-foreground"><LockKeyhole className="h-3.5 w-3.5" /> Checkout coming soon — no payment is taken.</p>
           </section>
         </div>
-        <p className="mt-5 text-xs text-muted-foreground">Displayed prices are provisional and exclude applicable VAT. Premium content and the daily digest are being rolled out; checkout is not yet available. Sanctione Compass provides information, not legal advice or sanctions screening.</p>
+        <p className="mt-5 text-xs text-muted-foreground">Displayed prices are provisional and exclude applicable VAT. Premium content and the daily digest are being rolled out; checkout is not yet available. Sanctions Signal provides information, not legal advice or sanctions screening.</p>
         <div className="mt-16 max-w-3xl space-y-5 border-t pt-10">
           <h2 className="font-serif text-3xl">Frequently asked questions</h2>
           <div><h3 className="font-medium">What is free?</h3><p className="mt-1 text-sm text-muted-foreground">Programme overviews, general scope information and public updates remain accessible without payment.</p></div>
           <div><h3 className="font-medium">What does Premium unlock?</h3><p className="mt-1 text-sm text-muted-foreground">Detailed programme resources and approved intelligence as they are published. Direct links to official source material remain independently available at the original authority.</p></div>
           <div><h3 className="font-medium">Can I subscribe today?</h3><p className="mt-1 text-sm text-muted-foreground">Not yet. Subscription checkout and self-service billing will be available after launch testing. Contact us for updates.</p></div>
-          <div><h3 className="font-medium">Is this a sanctions screening service?</h3><p className="mt-1 text-sm text-muted-foreground">No. Sanctione Compass is a research and regulatory intelligence platform, not a substitute for legal advice or screening controls.</p></div>
+          <div><h3 className="font-medium">Is this a sanctions screening service?</h3><p className="mt-1 text-sm text-muted-foreground">No. Sanctions Signal is a research and regulatory intelligence platform, not a substitute for legal advice or screening controls.</p></div>
         </div>
       </div>
     </SiteLayout>
