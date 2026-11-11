@@ -24,6 +24,10 @@ function EditorialQueue() {
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [advanced, setAdvanced] = useState(false);
+  const [euForm, setEuForm] = useState({
+    headline: "", executive_summary: "", source_facts: "",
+    detailed_analysis: "", practical_implications: "", legal_status: "",
+  });
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -57,6 +61,12 @@ function EditorialQueue() {
     setDraft(JSON.stringify(item.ai_draft ?? {}, null, 2));
     setNotes(item.review_notes ?? "");
     setAdvanced(false);
+    setEuForm({
+      headline: item.source_title,
+      executive_summary: "", source_facts: "",
+      detailed_analysis: "", practical_implications: "",
+      legal_status: "",
+    });
     setError("");
     setMessage("");
   }
@@ -72,7 +82,24 @@ function EditorialQueue() {
     setMessage("");
     try {
       let reviewedDraft: unknown = null;
-      if (decision === "approve" || decision === "correct") {
+      if (decision === "approve" && active.source_code === "eu_eurlex_oj_l_rss") {
+        const values = [euForm.headline, euForm.executive_summary, euForm.source_facts,
+          euForm.detailed_analysis, euForm.practical_implications, euForm.legal_status];
+        if (values.some((value) => !value.trim())) {
+          throw new Error("Complete every editorial field and select the legal status before approval.");
+        }
+        reviewedDraft = {
+          content_type: "legislation",
+          legal_status: euForm.legal_status,
+          headline: euForm.headline.trim(),
+          executive_summary: euForm.executive_summary.trim(),
+          source_facts: euForm.source_facts.trim(),
+          detailed_analysis: euForm.detailed_analysis.trim(),
+          practical_implications: euForm.practical_implications.trim(),
+          affected_entities: [], affected_sectors: [], legal_provisions: [],
+          tags: ["EU", "EUR-Lex"], priority: false,
+        };
+      } else if (decision === "approve" || decision === "correct") {
         try { reviewedDraft = JSON.parse(draft); }
         catch { throw new Error("The edited draft must be valid JSON."); }
       }
@@ -167,22 +194,56 @@ function EditorialQueue() {
               {typeof currentDraft.source_facts === "string" && <><h4 className="text-sm font-medium">Source facts to verify</h4><p className="whitespace-pre-wrap text-sm">{currentDraft.source_facts}</p></>}
             </section>}
             {!currentDraft && <p className="mt-4 border border-dashed p-3 text-sm text-muted-foreground">No complete editorial article has been prepared. You can reject this candidate or prepare and verify a draft before publishing.</p>}
-            <button type="button" className="mt-4 text-sm text-brand underline" aria-expanded={advanced} onClick={() => setAdvanced(!advanced)}>
-              {advanced ? "Hide advanced draft editor" : "Show advanced draft editor"}
-            </button>
-            {advanced && <div>
-              <label htmlFor="editorial-draft" className="mt-3 block text-sm font-medium">Reviewed analysis (JSON)</label>
-              <textarea id="editorial-draft" value={draft} onChange={(e) => setDraft(e.target.value)}
-                rows={18} spellCheck={false} className="mt-2 w-full rounded-sm border bg-background p-3 font-mono text-xs"
-                aria-describedby="draft-notice" />
-              <p id="draft-notice" className="text-xs text-muted-foreground">Verify each claim against the original source. This editor requires a complete schema-valid draft.</p>
-            </div>}
+            {isEurlex(active) && active.status === "pending_review" ? (
+              <div className="mt-5 space-y-4" aria-label="Editorial review form">
+                <p className="text-sm font-medium">Write your reviewed article</p>
+                <p className="text-xs text-muted-foreground">These fields become a public article only after you explicitly approve. Check the complete EUR-Lex act first; its RSS excerpt is not sufficient evidence.</p>
+                {([
+                  ["headline", "Headline"],
+                  ["executive_summary", "Short summary"],
+                  ["source_facts", "Verified facts from the official act"],
+                  ["detailed_analysis", "Detailed analysis"],
+                  ["practical_implications", "Practical implications"],
+                ] as const).map(([field, label]) => <div key={field}>
+                  <label htmlFor={"eu-" + field} className="block text-sm font-medium">{label}</label>
+                  <textarea id={"eu-" + field} value={euForm[field]}
+                    onChange={(event) => setEuForm((previous) => ({ ...previous, [field]: event.target.value }))}
+                    rows={field === "headline" ? 2 : 4}
+                    className="mt-1 w-full rounded-sm border bg-background p-3 text-sm"
+                    required />
+                </div>)}
+                <div>
+                  <label htmlFor="eu-legal-status" className="block text-sm font-medium">Legal status (verify in original act)</label>
+                  <select id="eu-legal-status" value={euForm.legal_status}
+                    onChange={(event) => setEuForm((previous) => ({ ...previous, legal_status: event.target.value }))}
+                    className="mt-1 w-full rounded-sm border bg-background p-3 text-sm" required>
+                    <option value="">Select legal status</option>
+                    <option value="announced">Announced / not confirmed in force</option>
+                    <option value="in_force">In force (verified in original)</option>
+                    <option value="not_applicable">Not applicable / unclear</option>
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button type="button" className="mt-4 text-sm text-brand underline" aria-expanded={advanced} onClick={() => setAdvanced(!advanced)}>
+                  {advanced ? "Hide advanced draft editor" : "Show advanced draft editor"}
+                </button>
+                {advanced && <div>
+                  <label htmlFor="editorial-draft" className="mt-3 block text-sm font-medium">Reviewed analysis (JSON)</label>
+                  <textarea id="editorial-draft" value={draft} onChange={(e) => setDraft(e.target.value)}
+                    rows={18} spellCheck={false} className="mt-2 w-full rounded-sm border bg-background p-3 font-mono text-xs"
+                    aria-describedby="draft-notice" />
+                  <p id="draft-notice" className="text-xs text-muted-foreground">Verify each claim against the original source. This editor requires a complete schema-valid draft.</p>
+                </div>}
+              </>
+            )}
             <label htmlFor="editorial-notes" className="mt-4 block text-sm font-medium">Review reason / correction note</label>
             <textarea id="editorial-notes" value={notes} onChange={(e) => setNotes(e.target.value)}
               rows={3} className="mt-2 w-full rounded-sm border bg-background p-3 text-sm" />
             <div className="mt-5 flex flex-wrap gap-3">
               {active.status === "pending_review" && <>
-                <button disabled={busy || !draft.trim() || draft.trim() === "{}"} onClick={() => void decide("approve")}
+                <button disabled={busy || (isEurlex(active) ? ![euForm.headline,euForm.executive_summary,euForm.source_facts,euForm.detailed_analysis,euForm.practical_implications,euForm.legal_status].every((v) => v.trim()) : !draft.trim() || draft.trim() === "{}")} onClick={() => void decide("approve")}
                   className="bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50">Approve and publish</button>
                 <button disabled={busy} onClick={() => void decide("reject")}
                   className="border px-4 py-2 text-sm disabled:opacity-50">Reject</button>
