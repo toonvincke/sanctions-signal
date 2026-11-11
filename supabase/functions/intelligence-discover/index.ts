@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
         // Display EUR-Lex excerpts as plain text in the editorial dashboard.
         // Do not render feed-provided HTML or promote metadata to verified facts.
         const extractedText = (eurlex
-          ? item.description.replace(/<[^>]*>/g, " ").replace(/\\s+/g, " ").trim()
+          ? item.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
           : item.description).slice(0, 20000);
         const contentHash = await sha([item.title, extractedText].join("\n"));
         const { data: existing, error: lookupError } = await db.from("intelligence_candidates")
