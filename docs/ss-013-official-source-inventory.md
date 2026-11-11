@@ -44,3 +44,13 @@ Prefer authority document identifiers (e.g., EU CELEX, UN document symbol, OFAC 
 
 ## Reachability audit implementation
 `scripts/check_official_sources.py` checks HTTP availability with a 20-second timeout, logs HTTP status, redirects, errors and UTC check timestamps to a JSON report. `.github/workflows/ss-013-source-audit.yml` schedules it daily and supports manual execution; on the feature branch, scheduled execution will only become active once merged to the default branch. A reachable page is **not** evidence that an RSS/API endpoint exists or that content has been ingested. The workflow currently records failures without failing the job, so inspect its uploaded artifact rather than treating a green check as all sources reachable. No Lovable Cloud writes are made.
+
+## Database registration and deduplication checks — 2026-11-11
+
+- **Atlas (production cloud database):** eight stable official source indexes entered in `public.sanctions_sources` using code-key idempotent insert; `enabled=false` for each new source. The four pre-existing sanctions-list entries were not modified. The individual 2026-11-06 EU Commission news *article* was intentionally not registered in Atlas as a recurrent source.
+- **Staging:** nine URL entries, including the EU example, registered disabled. Staging is intentionally not configured to ingest them.
+- Atlas unique codes: no duplicate codes. Atlas normalized source URLs: no duplicates. `intelligence_candidates.source_url` has a unique constraint.
+- Staging transactional/exception test: a second insert of the same candidate `source_url` raised `unique_violation` as expected, and test inserts were rolled back. This verifies **exact** URL duplication only.
+- Atlas published records: one shared normalized source URL, `https://curia.europa.eu/juris/liste.jsf`, is used for **two distinct judgments**: Rosneft C-72/15 and Neves 77 Solutions C-351/22. They must **not** be merged. Use official document identity (jurisdiction, event category, case number / CELEX / authority identifier) before using URL as a fallback.
+- Added `scripts/source_dedup.py` and `tests/test_source_dedup.py`. These are offline regression tests and do not yet wire identity generation into publication. That is part of subsequent ingestion work.
+- Reachability HTTP checks are independent of content parsing and do not populate `last_checked_at` in the cloud database; no DB credentials are used by GitHub Actions.
