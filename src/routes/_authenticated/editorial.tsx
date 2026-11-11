@@ -3,7 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type Candidate = {
-  id: string; source_code: string; source_title: string; source_url: string; source_publisher: string | null;\n  published_at: string | null; extracted_text: string | null;
+  id: string; source_code: string; source_title: string; source_url: string; source_publisher: string | null;
+  published_at: string | null; extracted_text: string | null;
   discovered_at: string; status: string; ai_draft: unknown;
   review_notes: string | null; published_record_id: string | null;
 };
@@ -21,7 +22,8 @@ function EditorialQueue() {
   const [selected, setSelected] = useState<string>("");
   const [draft, setDraft] = useState("");
   const [notes, setNotes] = useState("");
-  const [busy, setBusy] = useState(false);\n  const [advanced, setAdvanced] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [advanced, setAdvanced] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -53,7 +55,8 @@ function EditorialQueue() {
   function selectCandidate(item: Candidate) {
     setSelected(item.id);
     setDraft(JSON.stringify(item.ai_draft ?? {}, null, 2));
-    setNotes(item.review_notes ?? "");\n    setAdvanced(false);
+    setNotes(item.review_notes ?? "");
+    setAdvanced(false);
     setError("");
     setMessage("");
   }
@@ -96,7 +99,10 @@ function EditorialQueue() {
   if (access === "loading") return <div className="p-8" role="status">Checking administrator permissions…</div>;
   if (access === "forbidden") return <div className="p-8" role="alert">Administrator access required. {error}</div>;
 
-  const pending = candidates.filter((item) => item.status === "pending_review");\n  const isEurlex = (item: Candidate) => item.source_code === "eu_eurlex_oj_l_rss";\n  const currentDraft = active?.ai_draft && typeof active.ai_draft === "object" && !Array.isArray(active.ai_draft)\n    ? active.ai_draft as Record<string, unknown> : null;
+  const pending = candidates.filter((item) => item.status === "pending_review");
+  const isEurlex = (item: Candidate) => item.source_code === "eu_eurlex_oj_l_rss";
+  const currentDraft = active?.ai_draft && typeof active.ai_draft === "object" && !Array.isArray(active.ai_draft)
+    ? active.ai_draft as Record<string, unknown> : null;
   const history = candidates.filter((item) => item.status !== "pending_review");
 
   return <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
@@ -119,7 +125,8 @@ function EditorialQueue() {
               className={"w-full border p-3 text-left text-sm hover:border-brand " + (selected === item.id ? "border-brand" : "")}>
               <strong className="block">{item.source_title}</strong>
               <span className="mt-1 block text-xs text-muted-foreground">{item.source_publisher ?? "Publisher unknown"}</span>
-              {isEurlex(item) && <span className="mt-1 block text-xs text-muted-foreground">EU legislation · Official EUR-Lex publication · Editorial review required</span>}\n              {!item.ai_draft && !isEurlex(item) && <span className="block text-xs text-warning">No AI draft available — a reviewed draft is needed before publication</span>}
+              {isEurlex(item) && <span className="mt-1 block text-xs text-muted-foreground">EU legislation · Official EUR-Lex publication · Editorial review required</span>}
+              {!item.ai_draft && !isEurlex(item) && <span className="block text-xs text-warning">No AI draft available — a reviewed draft is needed before publication</span>}
             </button>
           </li>)}
         </ul>
