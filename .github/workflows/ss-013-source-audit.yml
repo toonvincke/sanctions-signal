@@ -7,6 +7,8 @@ on:
     paths:
       - 'scripts/check_official_sources.py'
       - 'scripts/source_dedup.py'
+      - 'scripts/eurlex_candidates.py'
+      - 'tests/test_eurlex_candidates.py'
       - 'tests/test_source_dedup.py'
       - '.github/workflows/ss-013-source-audit.yml'
 permissions:
@@ -21,15 +23,18 @@ jobs:
         with:
           python-version: '3.12'
       - name: Run offline deduplication regression tests
-        run: python -m unittest discover -s tests -p 'test_source_dedup.py' -v
+        run: python -m unittest discover -s tests -p 'test_*dedup.py' -v && python -m unittest discover -s tests -p 'test_eurlex_candidates.py' -v
       - name: Check public source reachability
-        run: python scripts/check_official_sources.py
+        run: python -m scripts.check_official_sources
         env:
           SOURCE_AUDIT_OUTPUT: source-audit.json
+          EURLEX_CANDIDATES_OUTPUT: eurlex-candidates.json
       - name: Upload timestamped check results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ss-013-source-audit
-          path: source-audit.json
+          path: |
+            source-audit.json
+            eurlex-candidates.json
           retention-days: 30
