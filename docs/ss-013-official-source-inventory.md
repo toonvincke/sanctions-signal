@@ -79,3 +79,11 @@ Known limitations:
 GitHub Actions [run #43067783338](https://github.com/toonvincke/sanctions-signal/actions/runs/43067783338) confirms the OJ L RSS candidate `https://eur-lex.europa.eu/EN/display-feed.rss?rssId=222` answered **HTTP 200** and its response parsed as **RSS 2.0 XML** with a channel title. This is stronger evidence than an HTML index returning HTTP 202. We subsequently tightened the check to require at least one `item` with a `guid` or `link`; consult the latest PR Actions run for that check's result.
 
 The feed is broad (all OJ L acts, not only sanctions). Source classification and extraction remain a separate implementation task. To register the RSS source *without enabling it*, an idempotent SQL statement has been prepared at `docs/sql/ss-013-register-eurlex-oj-l.sql`; it was **not executed**. Current Atlas EUR-Lex feed database status has not been verified through a non-Lovable connection.
+
+## CELEX screening prototype — 2026-11-11
+
+- `scripts/eurlex_candidates.py` parses EUR-Lex OJ L RSS into machine-readable candidate JSON. It extracts CELEX **from the item's own link/guid**, not from unrelated legislation cited in the text, and uses a normalized URL fallback if there is no CELEX.
+- Restrictive-measures/financial-sanctions terms and limited related terms flag a candidate for **editorial review only**. Unflagged documents are retained in the report (so the filter is auditable), not automatically assumed irrelevant forever. No AI judgments, paid API calls, database writes, or automatic publication.
+- A single RSS feed covers all OJ L legal acts, so these keyword rules are intentionally conservative and **not a completeness guarantee**; context such as foreign-language titles, indirect amendments and changes in annexes can require document text or other sources.
+- `tests/test_eurlex_candidates.py` exercises positive sanctions cases, unrelated acts, amendment-reference confusion, CELEX idempotency, invalid hosts and RSS, and ambiguous export controls.
+- The GitHub source-audit workflow now runs the new tests and uploads `eurlex-candidates.json` alongside `source-audit.json` when the feed can be parsed. This output is an offline review report, not a published intelligence record. A PR Actions run should be inspected for actual coverage.
