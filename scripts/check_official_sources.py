@@ -41,7 +41,12 @@ def check(jurisdiction, name, url):
                         channel = root.find('channel')
                         if channel is None or not channel.findtext('title'):
                             raise ValueError('RSS channel title missing')
-                        feed_items = len(channel.findall('item'))
+                        items = channel.findall('item')
+                        feed_items = len(items)
+                        if not items:
+                            raise ValueError('RSS feed contains no publication items')
+                        if any(not (item.findtext('guid') or item.findtext('link')) for item in items):
+                            raise ValueError('RSS item missing document identifier/link')
                         feed_valid = True
                     except (ET.ParseError, ValueError) as exc:
                         feed_valid, feed_error = False, str(exc)
