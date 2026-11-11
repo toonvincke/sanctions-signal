@@ -33,3 +33,14 @@ Prefer authority document identifiers (e.g., EU CELEX, UN document symbol, OFAC 
 4. Inspect existing Lovable Cloud source tables and register sources only after checking schema and access.
 5. Record actual per-source check outcomes and timestamps, run deduplication test fixtures, then complete SS-013 acceptance.
 6. Implement automated discovery, polling and publication under SS-020 (#28), not in this ticket.
+
+## Additional official sources located (2026-11-11)
+| Jurisdiction | Authority | URL | Coverage | Validation |
+|---|---|---|---|---|
+| US | OFAC | https://ofac.treasury.gov/recent-actions/enforcement-actions | Enforcement actions | Official public index located; HTTP audit pending |
+| US | OFAC | https://ofac.treasury.gov/recent-actions/general-licenses | General licence issuance/amendments | Official public index located; HTTP audit pending |
+| UK | OFSI | https://www.gov.uk/government/collections/enforcement-of-financial-sanctions | Published enforcement decisions | Official public index located; HTTP audit pending |
+| UK | OFSI | https://www.gov.uk/government/collections/ofsi-general-licences | General licences | Official public index located; HTTP audit pending |
+
+## Reachability audit implementation
+`scripts/check_official_sources.py` checks HTTP availability with a 20-second timeout, logs HTTP status, redirects, errors and UTC check timestamps to a JSON report. `.github/workflows/ss-013-source-audit.yml` schedules it daily and supports manual execution; on the feature branch, scheduled execution will only become active once merged to the default branch. A reachable page is **not** evidence that an RSS/API endpoint exists or that content has been ingested. The workflow currently records failures without failing the job, so inspect its uploaded artifact rather than treating a green check as all sources reachable. No Lovable Cloud writes are made.
