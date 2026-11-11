@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type Candidate = {
-  id: string; source_title: string; source_url: string; source_publisher: string | null;
+  id: string; source_code: string; source_title: string; source_url: string; source_publisher: string | null;\n  published_at: string | null; extracted_text: string | null;
   discovered_at: string; status: string; ai_draft: unknown;
   review_notes: string | null; published_record_id: string | null;
 };
@@ -21,7 +21,7 @@ function EditorialQueue() {
   const [selected, setSelected] = useState<string>("");
   const [draft, setDraft] = useState("");
   const [notes, setNotes] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false);\n  const [advanced, setAdvanced] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -36,7 +36,7 @@ function EditorialQueue() {
     }
     setAccess("admin");
     const { data, error: candidatesError } = await supabase.from("intelligence_candidates")
-      .select("id,source_title,source_url,source_publisher,discovered_at,status,ai_draft,review_notes,published_record_id")
+      .select("id,source_code,source_title,source_url,source_publisher,published_at,extracted_text,discovered_at,status,ai_draft,review_notes,published_record_id")
       .order("discovered_at", { ascending: false }).limit(100);
     if (candidatesError) throw candidatesError;
     setCandidates((data ?? []) as Candidate[]);
@@ -53,7 +53,7 @@ function EditorialQueue() {
   function selectCandidate(item: Candidate) {
     setSelected(item.id);
     setDraft(JSON.stringify(item.ai_draft ?? {}, null, 2));
-    setNotes(item.review_notes ?? "");
+    setNotes(item.review_notes ?? "");\n    setAdvanced(false);
     setError("");
     setMessage("");
   }
@@ -96,7 +96,7 @@ function EditorialQueue() {
   if (access === "loading") return <div className="p-8" role="status">Checking administrator permissions…</div>;
   if (access === "forbidden") return <div className="p-8" role="alert">Administrator access required. {error}</div>;
 
-  const pending = candidates.filter((item) => item.status === "pending_review");
+  const pending = candidates.filter((item) => item.status === "pending_review");\n  const isEurlex = (item: Candidate) => item.source_code === "eu_eurlex_oj_l_rss";\n  const currentDraft = active?.ai_draft && typeof active.ai_draft === "object" && !Array.isArray(active.ai_draft)\n    ? active.ai_draft as Record<string, unknown> : null;
   const history = candidates.filter((item) => item.status !== "pending_review");
 
   return <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
@@ -119,7 +119,7 @@ function EditorialQueue() {
               className={"w-full border p-3 text-left text-sm hover:border-brand " + (selected === item.id ? "border-brand" : "")}>
               <strong className="block">{item.source_title}</strong>
               <span className="mt-1 block text-xs text-muted-foreground">{item.source_publisher ?? "Publisher unknown"}</span>
-              {!item.ai_draft && <span className="block text-xs text-warning">No AI draft available — provide a complete reviewed JSON draft below</span>}
+              {isEurlex(item) && <span className="mt-1 block text-xs text-muted-foreground">EU legislation · Official EUR-Lex publication · Editorial review required</span>}\n              {!item.ai_draft && !isEurlex(item) && <span className="block text-xs text-warning">No AI draft available — a reviewed draft is needed before publication</span>}
             </button>
           </li>)}
         </ul>
@@ -143,18 +143,39 @@ function EditorialQueue() {
             </div>
             <p className="text-sm">Original source: <a className="break-all text-brand underline"
               href={active.source_url} target="_blank" rel="noopener noreferrer">{active.source_url}</a></p>
-            <p className="mt-2 text-xs text-muted-foreground">The source is evidence; any summary or implication below is editorial analysis.</p>
-            <label htmlFor="editorial-draft" className="mt-5 block text-sm font-medium">AI draft / corrected analysis (JSON)</label>
-            <textarea id="editorial-draft" value={draft} onChange={(e) => setDraft(e.target.value)}
-              rows={18} spellCheck={false} className="mt-2 w-full rounded-sm border bg-background p-3 font-mono text-xs"
-              aria-describedby="draft-notice" />
-            <p id="draft-notice" className="text-xs text-muted-foreground">Verify every factual and legal claim against the original document. JSON must match the draft schema.</p>
+            <p className="mt-2 text-xs text-muted-foreground">The official document is evidence; editorial interpretation must be independently checked.</p>
+            {active.published_at && <p className="mt-2 text-sm"><strong>Published:</strong> {new Date(active.published_at).toLocaleDateString("en-GB")}</p>}
+            {isEurlex(active) && <div className="mt-4 space-y-2 rounded-sm border p-4 text-sm">
+              <p className="font-medium">Why this publication was selected</p>
+              <p>Keywords in the official EUR-Lex feed suggest a possible sanctions connection. This is a screening signal, not a legal conclusion.</p>
+              <p className="text-muted-foreground">Read the original legal act before approving any article. If it is unrelated, reject the candidate.</p>
+            </div>}
+            {active.extracted_text && <section className="mt-4" aria-label="Publication excerpt">
+              <h3 className="font-medium">Official feed description</h3>
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm">{active.extracted_text.slice(0, 4000)}</p>
+            </section>}
+            {currentDraft && <section className="mt-4 space-y-2" aria-label="Editorial draft summary">
+              <h3 className="font-medium">Draft summary (unverified)</h3>
+              {typeof currentDraft.executive_summary === "string" && <p className="whitespace-pre-wrap text-sm">{currentDraft.executive_summary}</p>}
+              {typeof currentDraft.source_facts === "string" && <><h4 className="text-sm font-medium">Source facts to verify</h4><p className="whitespace-pre-wrap text-sm">{currentDraft.source_facts}</p></>}
+            </section>}
+            {!currentDraft && <p className="mt-4 border border-dashed p-3 text-sm text-muted-foreground">No complete editorial article has been prepared. You can reject this candidate or prepare and verify a draft before publishing.</p>}
+            <button type="button" className="mt-4 text-sm text-brand underline" aria-expanded={advanced} onClick={() => setAdvanced(!advanced)}>
+              {advanced ? "Hide advanced draft editor" : "Show advanced draft editor"}
+            </button>
+            {advanced && <div>
+              <label htmlFor="editorial-draft" className="mt-3 block text-sm font-medium">Reviewed analysis (JSON)</label>
+              <textarea id="editorial-draft" value={draft} onChange={(e) => setDraft(e.target.value)}
+                rows={18} spellCheck={false} className="mt-2 w-full rounded-sm border bg-background p-3 font-mono text-xs"
+                aria-describedby="draft-notice" />
+              <p id="draft-notice" className="text-xs text-muted-foreground">Verify each claim against the original source. This editor requires a complete schema-valid draft.</p>
+            </div>}
             <label htmlFor="editorial-notes" className="mt-4 block text-sm font-medium">Review reason / correction note</label>
             <textarea id="editorial-notes" value={notes} onChange={(e) => setNotes(e.target.value)}
               rows={3} className="mt-2 w-full rounded-sm border bg-background p-3 text-sm" />
             <div className="mt-5 flex flex-wrap gap-3">
               {active.status === "pending_review" && <>
-                <button disabled={busy} onClick={() => void decide("approve")}
+                <button disabled={busy || !draft.trim() || draft.trim() === "{}"} onClick={() => void decide("approve")}
                   className="bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50">Approve and publish</button>
                 <button disabled={busy} onClick={() => void decide("reject")}
                   className="border px-4 py-2 text-sm disabled:opacity-50">Reject</button>
