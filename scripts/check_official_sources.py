@@ -29,15 +29,17 @@ def check(jurisdiction, name, url):
         status, final_url, error = exc.code, exc.url, str(exc)
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         error = str(exc)
-    return dict(jurisdiction=jurisdiction,name=name,url=url,checked_at=checked,http_status=status,final_url=final_url,error=error,reachable=status is not None and 200 <= status < 400)
+    return dict(jurisdiction=jurisdiction,name=name,url=url,checked_at=checked,http_status=status,final_url=final_url,error=error,reachable=status is not None and 200 <= status < 400, content_ready=status == 200)
 def main():
     results = [check(*entry) for entry in SOURCES]
     dest = Path(os.environ.get("SOURCE_AUDIT_OUTPUT","source-audit.json"))
     dest.parent.mkdir(parents=True,exist_ok=True)
     dest.write_text(json.dumps(results,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
     print(f"Reachable: {sum(r['reachable'] for r in results)}/{len(results)}; report: {dest}")
+    print('HTTP 200 content-ready responses: ' + str(sum(r['content_ready'] for r in results)) + '/' + str(len(results)))
     for result in results:
         print(f"{result['jurisdiction']:2} {str(result['http_status']):4} {result['name']} {result['error'] or ''}")
-    # Audit failures should be visible in artifact, without breaking unrelated CI.
+    # HTTP 202 is a response, not proof that the requested content was delivered.
+    # An HTTP 200 alone does not prove parseability.
 if __name__ == "__main__":
     main()
