@@ -6,6 +6,7 @@ import os
 import urllib.error
 import urllib.request
 from pathlib import Path
+from scripts.eurlex_candidates import parse_feed
 from xml.etree import ElementTree as ET
 
 SOURCES = [
@@ -23,6 +24,7 @@ def check(jurisdiction, name, url):
     checked = dt.datetime.now(dt.timezone.utc).isoformat()
     status, final_url, error = None, None, None
     feed_valid, feed_items, feed_error = None, None, None
+    review_candidates = None
     try:
         request = urllib.request.Request(url, headers={"User-Agent":"SanctionsSignal-SourceAudit/0.1 (+https://github.com/toonvincke/sanctions-signal)","Accept":"text/html,application/xhtml+xml"})
         with urllib.request.urlopen(request, timeout=20) as response:
@@ -47,6 +49,7 @@ def check(jurisdiction, name, url):
                             raise ValueError('RSS feed contains no publication items')
                         if any(not (item.findtext('guid') or item.findtext('link')) for item in items):
                             raise ValueError('RSS item missing document identifier/link')
+                        review_candidates = parse_feed(body)
                         feed_valid = True
                     except (ET.ParseError, ValueError) as exc:
                         feed_valid, feed_error = False, str(exc)
@@ -54,12 +57,17 @@ def check(jurisdiction, name, url):
         status, final_url, error = exc.code, exc.url, str(exc)
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         error = str(exc)
-    return dict(jurisdiction=jurisdiction,name=name,url=url,checked_at=checked,http_status=status,final_url=final_url,error=error,reachable=status is not None and 200 <= status < 400, content_ready=status == 200,feed_valid=feed_valid,feed_items=feed_items,feed_error=feed_error)
+    return dict(jurisdiction=jurisdiction,name=name,url=url,checked_at=checked,http_status=status,final_url=final_url,error=error,reachable=status is not None and 200 <= status < 400, content_ready=status == 200,feed_valid=feed_valid,feed_items=feed_items,feed_error=feed_error,review_candidates=review_candidates)
 def main():
     results = [check(*entry) for entry in SOURCES]
     dest = Path(os.environ.get("SOURCE_AUDIT_OUTPUT","source-audit.json"))
     dest.parent.mkdir(parents=True,exist_ok=True)
-    dest.write_text(json.dumps(results,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
+    dest.write_text(json.dumps([{k:v for k,v in row.items() if k != 'review_candidates'} for row in results],indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
+    eu = next((r for r in results if r['name'].startswith('EUR-Lex')), None)
+    if eu and eu['review_candidates'] is not None:
+        candidate_file = Path(os.environ.get('EURLEX_CANDIDATES_OUTPUT','eurlex-candidates.json'))
+        candidate_file.write_text(json.dumps(eu['review_candidates'], indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+        print('EU RSS candidates: ' + str(len(eu['review_candidates'])) + ', review: ' + str(sum(x['requires_editorial_review'] for x in eu['review_candidates'])))
     print(f"Reachable: {sum(r['reachable'] for r in results)}/{len(results)}; report: {dest}")
     print('EU RSS valid: ' + str(next((r['feed_valid'] for r in results if r['name'].startswith('EUR-Lex')), None)))
     print('HTTP 200 responses: ' + str(sum(r['content_ready'] for r in results)) + '/' + str(len(results)))
