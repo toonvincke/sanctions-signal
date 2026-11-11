@@ -1,0 +1,31 @@
+name: SS-013 official source reachability
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 6 * * *'
+  pull_request:
+    paths:
+      - 'scripts/check_official_sources.py'
+      - '.github/workflows/ss-013-source-audit.yml'
+permissions:
+  contents: read
+jobs:
+  source-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check public source reachability
+        run: python scripts/check_official_sources.py
+        env:
+          SOURCE_AUDIT_OUTPUT: source-audit.json
+      - name: Upload timestamped check results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ss-013-source-audit
+          path: source-audit.json
+          retention-days: 30
