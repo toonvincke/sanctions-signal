@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """SS-013: lightweight official-source reachability audit; no scraping or publishing."""
-import csv
 import datetime as dt
 import json
 import os
@@ -17,7 +16,7 @@ SOURCES = [
  ("UK","OFSI general licences","https://www.gov.uk/government/collections/ofsi-general-licences"),
  ("UN","UNSC consolidated list changes","https://main.un.org/securitycouncil/en/content/list-updates-unsc-consolidated-list"),
  ("UN","UNSC committee releases","https://main.un.org/securitycouncil/en/sanctions/1267/press-releases"),
- ("EU","EU Commission sanctions news example","https://finance.ec.europa.eu/news/statement-commissioner-albuquerque-outcomes-tenth-meeting-high-level-meeting-sanctions-2026-11-06_en"),
+ ("EU","EUR-Lex Official Journal direct access","https://eur-lex.europa.eu/oj/direct-access.html"),
 ]
 def check(jurisdiction, name, url):
     checked = dt.datetime.now(dt.timezone.utc).isoformat()
