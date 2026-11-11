@@ -62,3 +62,14 @@ Prefer authority document identifiers (e.g., EU CELEX, UN document symbol, OFAC 
 - The [EUR-Lex SOAP search webservice](https://eur-lex.europa.eu/content/help/data-reuse/webservice.html?locale=en) is registration-based; the Cellar REST API serves document retrieval using identifiers. Neither integration is implemented by this PR.
 - **Database:** the Atlas insert was requested earlier but no result was captured; as we are now working strictly without Lovable, its committed state remains **unverified**. Do not claim that this EU source is in the Atlas database until checked via a permitted non-Lovable database connection.
 - Pending: choose and validate a real RSS/feed or data access path, test a real legal-act extraction and CELEX-based deduplication, then register/enroll an enabled EU monitoring source.
+
+## EUR-Lex OJ L RSS candidate — 2026-11-11
+
+The EUR-Lex [predefined RSS alerts help](https://eur-lex.europa.eu/content/help/search/predefined-rss.html) documents the "Acts of the Official Journal L" publication category. A third-party feed discovery service identifies the feed as `https://eur-lex.europa.eu/EN/display-feed.rss?rssId=222`. Unlike a static OJ landing page, this should yield one RSS item per published L-series act; **it is not sanctions-specific** and requires later metadata/classification filters.
+
+The GitHub audit now requests this candidate feed and checks its actual RSS 2.0 XML document structure and channel title if the response is HTTP 200. A 202 or challenge page will be recorded as **not validated**. Feed status in the report must be inspected; an overall green workflow can otherwise mask missing coverage.
+
+Known limitations:
+- The original EUR-Lex OJ web index returned HTTP 202 from the GitHub-hosted runner; a feed response cannot be assumed to behave the same or differently until tested.
+- RSS results are broad EU legislation; sanctions signals require identifying relevant legal acts by CELEX/document reference and content.
+- RSS discovery/validation does not register a source in the Atlas database. No Lovable actions or DB writes were used for this follow-up.
