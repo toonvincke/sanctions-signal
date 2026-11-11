@@ -2,6 +2,7 @@ import { requestIntelligenceDraft } from "../_shared/openai-client.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { parsePublicationFeed } from "../_shared/xml-feeds.ts";
 import { validateOfficialSource, type OfficialSourceInput } from "../_shared/official-publication.ts";
+import { EURLEX_SOURCE_CODE, eurlexScreen } from "../_shared/eurlex-screen.ts";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 const CRON_SECRET = Deno.env.get("SANCTIONS_CRON_SECRET")!;
@@ -39,8 +40,15 @@ Deno.serve(async (req) => {
       const xml = await response.text();
       const items = parsePublicationFeed(xml);
       let discovered = 0, drafted = 0, draftFailures = 0, officialPublished = 0, sourceFailures = 0;
-      for (const item of items.slice(0, 30)) {
+      for (const item of items.slice(0, source.code === EURLEX_SOURCE_CODE ? 150 : 30)) {
         if (!item.title || !item.url || !/^https:\/\//i.test(item.url)) continue;
+        const eurlex = source.code === EURLEX_SOURCE_CODE;
+        if (eurlex) {
+          let parsed: URL;
+          try { parsed = new URL(item.url); } catch { continue; }
+          if (parsed.protocol !== "https:" || !["eur-lex.europa.eu", "data.europa.eu"].includes(parsed.hostname.toLowerCase())) continue;
+          if (!eurlexScreen(item.title, item.description).review) continue;
+        }
         const publishedAt = item.date && !Number.isNaN(Date.parse(item.date)) ? new Date(item.date).toISOString() : null;
         // Publish only technical official metadata for explicitly mapped programme feeds.
         // Unreviewed AI content remains a private candidate regardless of this result.
@@ -61,13 +69,19 @@ Deno.serve(async (req) => {
             console.error("Official metadata publish failed:", source.code, publishError.code);
           } else officialPublished++;
         }
-        const extractedText = item.description.slice(0, 20000);
+        // Display EUR-Lex excerpts as plain text in the editorial dashboard.
+        // Do not render feed-provided HTML or promote metadata to verified facts.
+        const extractedText = (eurlex
+          ? item.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
+          : item.description).slice(0, 20000);
         const contentHash = await sha([item.title, extractedText].join("\n"));
         const { data: existing, error: lookupError } = await db.from("intelligence_candidates")
           .select("id,status,content_hash,ai_draft").eq("source_url", item.url).maybeSingle();
         if (lookupError) throw lookupError;
         if (existing && (existing.status !== "pending_review" || (existing.content_hash === contentHash && existing.ai_draft))) continue;
-        const aiDraft = await draftWithAI(item.title, source.name, item.url, publishedAt, extractedText).catch((error) => {
+        // EUR-Lex items are metadata-only until a human reviews the legal act.
+        // No paid AI draft or automatic legal conclusions for these candidates.
+        const aiDraft = eurlex ? null : await draftWithAI(item.title, source.name, item.url, publishedAt, extractedText).catch((error) => {
           draftFailures++;
           console.error("AI draft failed for source", source.code, ":", error instanceof Error ? error.message : String(error));
           return null;

@@ -44,8 +44,8 @@ jobs:
           deno-version: v2.x
       - name: Type-check XML parser
         run: deno check --node-modules-dir=auto supabase/functions/_shared/xml-feeds.ts
-      - name: Test UN XML and RSS/Atom parsing
-        run: deno test --node-modules-dir=auto supabase/functions/_shared/xml-feeds.test.ts
+      - name: Test UN XML, RSS/Atom and EUR-Lex screening
+        run: deno test --node-modules-dir=auto supabase/functions/_shared/xml-feeds.test.ts supabase/functions/_shared/eurlex-screen.test.ts
 
   database-tests:
     runs-on: ubuntu-latest
