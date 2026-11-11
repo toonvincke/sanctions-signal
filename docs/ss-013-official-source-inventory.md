@@ -73,3 +73,9 @@ Known limitations:
 - The original EUR-Lex OJ web index returned HTTP 202 from the GitHub-hosted runner; a feed response cannot be assumed to behave the same or differently until tested.
 - RSS results are broad EU legislation; sanctions signals require identifying relevant legal acts by CELEX/document reference and content.
 - RSS discovery/validation does not register a source in the Atlas database. No Lovable actions or DB writes were used for this follow-up.
+
+## Live EUR-Lex RSS verification — 2026-11-11
+
+GitHub Actions [run #43067783338](https://github.com/toonvincke/sanctions-signal/actions/runs/43067783338) confirms the OJ L RSS candidate `https://eur-lex.europa.eu/EN/display-feed.rss?rssId=222` answered **HTTP 200** and its response parsed as **RSS 2.0 XML** with a channel title. This is stronger evidence than an HTML index returning HTTP 202. We subsequently tightened the check to require at least one `item` with a `guid` or `link`; consult the latest PR Actions run for that check's result.
+
+The feed is broad (all OJ L acts, not only sanctions). Source classification and extraction remain a separate implementation task. To register the RSS source *without enabling it*, an idempotent SQL statement has been prepared at `docs/sql/ss-013-register-eurlex-oj-l.sql`; it was **not executed**. Current Atlas EUR-Lex feed database status has not been verified through a non-Lovable connection.
