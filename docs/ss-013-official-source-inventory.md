@@ -1,0 +1,35 @@
+# SS-013 — Official sanctions intelligence source inventory
+
+Status: initial verified inventory (2026-11-11). **Not** a claim that feeds are registered in Lovable Cloud or scheduled monitoring is live.
+
+## Scope and editorial separation
+Monitor **changes and publications**, not bulk sanctions-list sync. Keep separate event categories: legislation / designation change / guidance or FAQ / general or specific licence / court ruling / enforcement / press announcement. Bulk list snapshots belong to a separate ingestion pipeline.
+
+## Initial verified official web sources
+
+| Jurisdiction | Source | URL | Source type | Coverage | Access verified | API/RSS verified | Last checked |
+|---|---|---|---|---|---|---|---|
+| US | OFAC Recent Actions | https://ofac.treasury.gov/recent-actions/sanctions-list-updates | Official public web index | Designations, removals, and notices referencing FAQs/licences | Public page found | No | 2026-11-11 |
+| US | OFAC Press Releases | https://ofac.treasury.gov/press-releases | Official public web index | Announcements and linked actions | Public page found | No | 2026-11-11 |
+| UK | UK Sanctions List | https://www.gov.uk/government/publications/the-uk-sanctions-list | Official public updates page | Designations, amendments, revocations | Public page found | No | 2026-11-11 |
+| UK | OFSI enforcement guidance | https://www.gov.uk/government/publications/financial-sanctions-enforcement-and-monetary-penalties-guidance/financial-sanctions-enforcement-and-monetary-penalties-guidance | Official guidance page | Enforcement policy updates | Public page found | No | 2026-11-11 |
+| EU | European Commission sanctions implementation news | https://finance.ec.europa.eu/news/statement-commissioner-albuquerque-outcomes-tenth-meeting-high-level-meeting-sanctions-2026-11-06_en | Official publication example, not a feed | Implementation news | Public page found | No | 2026-11-11 |
+| UN | UNSC consolidated list change log | https://main.un.org/securitycouncil/en/content/list-updates-unsc-consolidated-list | Official public index | Additions, removals and amendments | Public page found | No | 2026-11-11 |
+| UN | Security Council resolutions | https://main.un.org/securitycouncil/en/content/resolutions-0 | Official public index | Resolutions, including sanctions | Public page found | No | 2026-11-11 |
+| UN | ISIL/Al-Qaida committee press releases | https://main.un.org/securitycouncil/en/sanctions/1267/press-releases | Official committee public index | Committee announcements | Public page found | No | 2026-11-11 |
+
+**Important:** EU regulatory coverage still requires dedicated EUR-Lex / Official Journal discovery and validation; UK OFSI penalty notices and OFAC enforcement and general-licence indexes need dedicated validation. The sources above are an initial selection, not complete coverage.
+
+## Proposed source registry fields
+`source_id`, `jurisdiction`, `authority`, `name`, `canonical_url`, `access_method` (html/rss/atom/api), `content_categories`, `official`, `enabled`, `check_interval_hours` (default 24), `last_checked_at`, `last_success_at`, `last_http_status`, `last_error`, `terms_or_access_notes`.
+
+## Proposed deduplication
+Prefer authority document identifiers (e.g., EU CELEX, UN document symbol, OFAC action URL) plus jurisdiction and event type. Otherwise use normalized canonical URL; use a content hash for revisions. Distinguish updated documents from genuinely new events. A press release and underlying legal act may be linked to one event, not published as duplicate alerts.
+
+## Follow-up verification and acceptance gaps
+1. Check live HTTP responses from the intended GitHub Actions runner (search-engine visibility is not equivalent to a successful programmatic fetch).
+2. Discover and verify official RSS/Atom/API availability individually; do not infer API access from a public HTML page.
+3. Extend inventory to EUR-Lex/OJ, Council of the EU, OFAC enforcement/licences/FAQs, UK OFSI penalties and legislation, UN sanctions committee updates.
+4. Inspect existing Lovable Cloud source tables and register sources only after checking schema and access.
+5. Record actual per-source check outcomes and timestamps, run deduplication test fixtures, then complete SS-013 acceptance.
+6. Implement automated discovery, polling and publication under SS-020 (#28), not in this ticket.
