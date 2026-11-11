@@ -87,3 +87,13 @@ The feed is broad (all OJ L acts, not only sanctions). Source classification and
 - A single RSS feed covers all OJ L legal acts, so these keyword rules are intentionally conservative and **not a completeness guarantee**; context such as foreign-language titles, indirect amendments and changes in annexes can require document text or other sources.
 - `tests/test_eurlex_candidates.py` exercises positive sanctions cases, unrelated acts, amendment-reference confusion, CELEX idempotency, invalid hosts and RSS, and ambiguous export controls.
 - The GitHub source-audit workflow now runs the new tests and uploads `eurlex-candidates.json` alongside `source-audit.json` when the feed can be parsed. This output is an offline review report, not a published intelligence record. A PR Actions run should be inspected for actual coverage.
+
+## Editorial dashboard integration — 2026-11-11
+
+Implemented on the SS-013 feature branch, **not deployed**:
+1. The existing admin-only `/_authenticated/editorial` route now displays human-readable publication titles, official URLs, publication dates, EUR-Lex feed excerpts and an explicit warning that keyword screening is not legal verification. JSON is hidden under an optional advanced editor. Publication remains gated on a fully reviewed draft.
+2. The existing authenticated `intelligence-discover` backend supports `eu_eurlex_oj_l_rss`, scans up to 150 RSS items, filters for conservative sanctions terms, and stores **only matching items** as private `intelligence_candidates`. For EU items, it deliberately does not call AI drafting or automatically publish.
+3. The existing `candidate-review` admin-only endpoint and audited publication state transitions are reused. No client-side database write permission has been added.
+4. Server screening tests reside in `supabase/functions/_shared/eurlex-screen.test.ts` and are included in the monitoring CI workflow.
+
+**Go-live remains blocked:** The EUR-Lex RSS source record must exist in Atlas, the new discovery Edge Function must be deployed, the RSS source must be deliberately enabled, and discovery must run with its existing cron secret. Without those steps, the two GitHub-artifact examples do not appear in `/editorial`. The filtered live queue may not exactly match the earlier 2/100 snapshot if the feed changes. No Lovable AI agent or hosted project actions were used to perform these steps.
